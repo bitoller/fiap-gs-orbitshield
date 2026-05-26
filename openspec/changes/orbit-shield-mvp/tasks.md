@@ -1,0 +1,22 @@
+# Tasks
+
+- [x] Create .NET 8 solution and layered backend projects.
+- [x] Implement Oracle persistence with `OS_*` tables.
+- [x] Create Oracle DDL scripts with primary keys, foreign keys, unique constraints, checks and indexes.
+- [x] Create tables in FIAP Oracle schema.
+- [x] Implement authentication with BCrypt and JWT.
+- [x] Implement role-based access control.
+- [x] Implement satellite CRUD endpoints.
+- [x] Implement telemetry endpoint.
+- [x] Implement conjunction emergency endpoint.
+- [x] Implement maneuver logging endpoint.
+- [x] Implement sensor reading endpoints with simulated gravity and thrust.
+- [x] Implement TLE orbital element endpoints.
+- [x] Dockerize backend and Oracle with Docker Compose.
+- [x] Create backend README and API documentation.
+- [x] Create Wokwi ESP32 circuit and source files.
+- [x] Validate Wokwi ESP32 to backend integration through public tunnel.
+- [x] Register IoT test evidence.
+- [ ] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
+- [ ] Validate Android polling against backend telemetry, alerts, sensors and maneuver history.
+- [ ] Collect final screenshots and delivery evidence.

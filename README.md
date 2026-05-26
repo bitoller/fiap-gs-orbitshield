@@ -160,6 +160,7 @@ GET  /api/satellite/orbital-elements?satelliteId=1
 Full endpoint documentation:
 
 - [API Endpoints](./docs/api-endpoints.md)
+- [IoT Test Evidence](./docs/iot-test-plan.md)
 
 ## IoT Simulation Scope
 
@@ -178,6 +179,76 @@ Gravity and thrust are represented as simulated telemetry fields and persisted b
 }
 ```
 
+## Real Satellite Interpretation
+
+The Wokwi circuit is a functional software-integration prototype, not a literal spacecraft hardware design.
+
+In the MVP:
+
+- The ESP32 represents an onboard satellite computer.
+- The servo motor represents a visible avoidance actuator.
+- The potentiometer represents simulated thrust intensity.
+- The DHT22 represents thermal telemetry.
+- The backend represents Mission Control and performs the collision-risk decision.
+
+In a real satellite, the same software flow would be adapted to space-grade hardware:
+
+- The ESP32 would be replaced by a radiation-tolerant onboard computer or flight controller.
+- The servo movement would be replaced by reaction wheels, magnetorquers or chemical/electric thrusters.
+- Simulated gravity and thrust values would come from orbital dynamics, IMU data, propulsion telemetry and flight software.
+- Collision risk would use propagated orbital elements, such as TLE/SGP4 or more precise ephemeris models, instead of the MVP emergency simulation.
+
+So the prototype validates the distributed architecture and decision loop:
+
+```text
+Telemetry -> Mission analysis -> Collision alert -> Avoidance command -> Maneuver log
+```
+
+It does not claim to reproduce full orbital mechanics inside Wokwi.
+
+## Automatic Reaction and Lag Strategy
+
+The MVP already demonstrates automatic satellite reaction:
+
+```text
+Backend detects/simulates collision risk
+        |
+        v
+ESP32 polls Mission Control every 5 seconds
+        |
+        v
+ESP32 receives collisionRisk=true
+        |
+        v
+Servo moves to 90 degrees and LCD shows collision alert
+        |
+        v
+ESP32 posts the maneuver log back to the backend
+```
+
+This solves the core academic problem: the satellite simulator reacts automatically to a collision alert without manual intervention.
+
+The current lag-control strategy is polling:
+
+- ESP32 calls the backend every 5 seconds.
+- Worst-case detection delay is approximately the polling interval plus HTTP latency.
+- This is simple, free and reliable enough for the MVP demonstration.
+
+Best future option:
+
+- Replace polling with MQTT or another event-driven command channel.
+- Mission Control would publish a collision-avoidance command.
+- The satellite would subscribe and react immediately.
+- This would reduce latency and better match distributed IoT/spacecraft command patterns.
+
+Recommended evolution:
+
+```text
+MVP: REST polling every 5 seconds
+Next version: MQTT command topic for near-real-time alerts
+Advanced version: hybrid autonomy, where the satellite can react locally if communication is delayed
+```
+
 ## Security
 
 Implemented backend security practices:
@@ -191,7 +262,7 @@ Implemented backend security practices:
 
 ## Next Steps
 
-1. Build the Wokwi ESP32 simulation.
-2. Integrate ESP32 with the backend endpoints.
+1. Open the Wokwi ESP32 simulation in [iot/wokwi-orbit-shield](./iot/wokwi-orbit-shield).
+2. Expose the backend with an HTTPS tunnel and update `Config.h`.
 3. Build the Android Kotlin app with MVVM and Jetpack Compose.
 4. Collect final screenshots, logs and test evidence for submission.
