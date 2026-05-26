@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/OrbitShield.Api/Dockerfile
+    container_name: orbitshield-api
+    ports:
+      - "5184:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ORACLE_URL: oracle:1521/FREEPDB1
+      ORACLE_USER: ORBITSHIELD
+      ORACLE_PASSWORD: OrbitShield123
+    depends_on:
+      oracle:
+        condition: service_healthy
+
+  oracle:
+    image: container-registry.oracle.com/database/free:latest
+    container_name: orbitshield-oracle
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      ORACLE_PWD: OrbitShield123
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+
+volumes:
+  oracle-data:

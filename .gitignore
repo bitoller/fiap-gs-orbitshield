@@ -1,0 +1,20 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.log
+TestResults/
+coverage/
+
+# Local database data and secrets
+.env
+.env.local
+*.env
+oracle-data/
+
+# Android artifacts for the next phase
+.gradle/
+build/
+local.properties

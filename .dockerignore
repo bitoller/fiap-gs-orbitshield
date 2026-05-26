@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.idea/
+.env
+.env.local
+api-out.log
+api-err.log
+TestResults/
+coverage/
