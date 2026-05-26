@@ -38,8 +38,8 @@ void loop()
     }
 
     SensorReading reading = satelliteSensors.read();
-    satelliteActuator.showTelemetry(reading);
     missionControl.postSensorReading(reading);
+    satelliteActuator.showTelemetry(reading);
 
     OrbitalEnvironment environment;
     if (!missionControl.getOrbitalEnvironment(environment))
@@ -48,6 +48,12 @@ void loop()
     }
 
     AutonomyDecision decision = autonomyEngine.evaluate(environment, reading);
+    Serial.print("Risk classification: ");
+    Serial.println(decision.riskLabel);
+    Serial.print("Debris class: ");
+    Serial.println(decision.debrisClass);
+    Serial.print("Time to closest approach: ");
+    Serial.println(decision.timeToClosestApproachSeconds);
     Serial.print("Onboard miss distance km: ");
     Serial.println(decision.missDistanceKm);
 
@@ -71,10 +77,7 @@ void loop()
         return;
     }
 
-    if (avoidanceActive)
-    {
-        satelliteActuator.showSafePass(decision);
-        avoidanceActive = false;
-        lastServoAngle = Config::ServoNominalAngle;
-    }
+    satelliteActuator.showSafePass(decision);
+    avoidanceActive = false;
+    lastServoAngle = Config::ServoNominalAngle;
 }

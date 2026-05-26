@@ -63,6 +63,62 @@ Where:
 
 The result is constrained between 25 and 90 degrees. If a later scenario is safe, the ESP32 returns the servo to the nominal angle.
 
+## Debris Physical Model
+
+The backend can generate a random debris object through:
+
+```text
+POST /api/orbital-scenarios/satellites/1/spawn-random-debris
+```
+
+The generated object includes:
+
+- diameter in meters;
+- estimated mass in kilograms;
+- effective cross-section;
+- debris density for the probability model;
+- estimated impact energy;
+- debris class such as `Fragment`, `Large debris` or `Derelict object`.
+
+The backend classifies the scenario as:
+
+```text
+SAFE PASS
+NEAR MISS
+AVOIDANCE REQUIRED
+IMPACT PREDICTED
+```
+
+The ESP32 still performs the onboard closest-approach calculation and uses the backend debris attributes only as additional awareness for logs, LCD output and impact warning.
+
+## Time-Aware Scenario Progression
+
+A thrown debris object is not static. The backend stores the initial relative position and relative velocity, then advances the relative position on each environment request:
+
+```text
+currentRelativePosition = initialRelativePosition + relativeVelocity * elapsedSimulatedSeconds
+```
+
+The simulation uses accelerated time for classroom demonstration. This allows an object to approach, trigger avoidance and pass the satellite within a short Wokwi run.
+
+The ESP32 keeps polling the environment and recalculating locally. When the object has passed and the projected miss distance becomes safe, the ESP32 returns the servo to nominal and turns off the red LED without requiring a manual `SafePass`.
+
+`SafePass` remains available only as a manual reset/demo shortcut.
+
+## User-Friendly LCD States
+
+The Wokwi LCD avoids raw engineering telemetry during the demo. Detailed sensor values still appear in the Serial Monitor, while the LCD shows mission states:
+
+```text
+SCANNING ORBIT
+TRACKING DEBRIS
+AUTO AVOIDANCE
+IMPACT RISK
+SAFE PASS
+```
+
+This makes the demo easier to understand: observers can immediately see whether the satellite is scanning, tracking an object, maneuvering, reporting late impact risk or returning to nominal after the object passes.
+
 ## Named Test Scenarios
 
 The backend exposes presets for live Swagger demonstrations:

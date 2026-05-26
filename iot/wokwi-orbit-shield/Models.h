@@ -47,13 +47,23 @@ struct OrbitalEnvironment
     float safeDistanceKm = 5.0f;
     float lookaheadSeconds = 120.0f;
     float backendCollisionProbability = 0.0f;
+    float debrisDiameterMeters = 0.0f;
+    float estimatedMassKg = 0.0f;
+    float impactEnergyJoules = 0.0f;
+    String debrisClass = "";
+    String backendClassification = "";
+    bool predictedImpact = false;
 };
 
 struct AutonomyDecision
 {
     bool collisionRisk = false;
+    bool alertLedOn = false;
     float timeToClosestApproachSeconds = 0.0f;
     float missDistanceKm = 0.0f;
     float relativeSpeedKmS = 0.0f;
     int servoAngle = 0;
+    String riskLabel = "SAFE PASS";
+    String debrisClass = "";
+    bool predictedImpact = false;
 };

@@ -27,5 +27,14 @@ services:
     volumes:
       - oracle-data:/opt/oracle/oradata
 
+  tunnel:
+    image: node:20-alpine
+    container_name: orbitshield-tunnel
+    command: sh -c "npx -y localtunnel --port 8080 --local-host api"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   oracle-data:

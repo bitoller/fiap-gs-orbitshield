@@ -8,7 +8,9 @@
     { "type": "wokwi-servo", "id": "servo", "top": 199.6, "left": 201.6, "attrs": {} },
     { "type": "wokwi-lcd1602", "id": "lcd", "top": -137.6, "left": 188.8, "attrs": { "pins": "i2c" } },
     { "type": "wokwi-dht22", "id": "dht", "top": 182.7, "left": -168.6, "attrs": { "temperature": "28.4", "humidity": "42" } },
-    { "type": "wokwi-potentiometer", "id": "thrust", "top": -115.7, "left": -153.8, "attrs": {} }
+    { "type": "wokwi-potentiometer", "id": "thrust", "top": -115.7, "left": -153.8, "attrs": {} },
+    { "type": "wokwi-led", "id": "alertLed", "top": 115.2, "left": 364.8, "attrs": { "color": "red" } },
+    { "type": "wokwi-resistor", "id": "alertResistor", "top": 124.8, "left": 288, "attrs": { "value": "220" } }
   ],
   "connections": [
     [ "esp:TX0", "$serialMonitor:RX", "", [] ],
@@ -29,7 +31,11 @@
 
     [ "esp:D34", "thrust:SIG", "green", [] ],
     [ "esp:3V3", "thrust:VCC", "red", [] ],
-    [ "esp:GND.2", "thrust:GND", "black", [] ]
+    [ "esp:GND.2", "thrust:GND", "black", [] ],
+
+    [ "esp:D19", "alertResistor:1", "red", [] ],
+    [ "alertResistor:2", "alertLed:A", "red", [] ],
+    [ "alertLed:C", "esp:GND.2", "black", [] ]
   ],
   "dependencies": {}
 }

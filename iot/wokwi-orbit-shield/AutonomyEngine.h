@@ -31,6 +31,10 @@ public:
         decision.missDistanceKm = missDistance;
         decision.relativeSpeedKmS = relativeSpeed;
         decision.collisionRisk = missDistance <= environment.safeDistanceKm;
+        decision.predictedImpact = environment.predictedImpact;
+        decision.debrisClass = environment.debrisClass;
+        decision.riskLabel = classifyRisk(decision, environment);
+        decision.alertLedOn = decision.collisionRisk || decision.predictedImpact;
         decision.servoAngle = calculateServoAngle(decision, environment, reading);
 
         return decision;
@@ -81,5 +85,32 @@ private:
         const float angle = 25.0f + (distanceSeverity * 40.0f) + (urgency * 15.0f) + (thrustAuthority * 10.0f);
 
         return constrain(static_cast<int>(round(angle)), 25, Config::ServoAvoidanceAngle);
+    }
+
+    static String classifyRisk(const AutonomyDecision& decision, const OrbitalEnvironment& environment)
+    {
+        if (environment.predictedImpact)
+        {
+            return "IMPACT RISK";
+        }
+
+        if (environment.backendClassification.length() > 0)
+        {
+            return environment.backendClassification;
+        }
+
+        if (!decision.collisionRisk)
+        {
+            const float nearMissLimit = environment.safeDistanceKm * 1.5f;
+            return decision.missDistanceKm <= nearMissLimit ? "NEAR MISS" : "SAFE PASS";
+        }
+
+        if (decision.timeToClosestApproachSeconds <= 30.0f)
+        {
+            return "LATE DETECT";
+        }
+
+        const float criticalLimit = environment.safeDistanceKm * 0.35f;
+        return decision.missDistanceKm <= criticalLimit ? "CRITICAL" : "AVOIDANCE";
     }
 };

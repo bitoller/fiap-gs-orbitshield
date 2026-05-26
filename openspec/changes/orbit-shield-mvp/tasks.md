@@ -22,6 +22,9 @@
 - [x] Move collision-risk decision into ESP32 onboard autonomy logic.
 - [x] Add named Swagger-triggered orbital scenario presets.
 - [x] Add variable ESP32 avoidance angle and safe-pass return behavior.
+- [x] Add random debris generation with physical attributes and impact prediction.
+- [x] Show onboard risk classification in Wokwi logs, LCD and red alert LED.
+- [x] Add time-aware debris progression so Wokwi can return to safe state automatically.
 - [ ] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
 - [ ] Validate Android polling against backend telemetry, alerts, sensors and maneuver history.
 - [ ] Collect final screenshots and delivery evidence.

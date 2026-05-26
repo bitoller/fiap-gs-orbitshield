@@ -60,6 +60,216 @@ Implemented features:
 
 - Docker Desktop
 - .NET SDK 8, only if running outside Docker
+- Wokwi account for the ESP32 browser simulation
+
+## Beginner Quick Start
+
+Use this flow when running the complete demo from zero.
+
+### 1. Start Docker Desktop
+
+Open Docker Desktop and wait until it says the engine is running.
+
+### 2. Open the project folder in a terminal
+
+Use PowerShell in the repository root:
+
+```powershell
+cd C:\Users\bi_to\Desktop\fiap-gs-orbitshield
+```
+
+### 3. Start the backend, database and tunnel
+
+Run:
+
+```powershell
+docker compose up --build
+```
+
+Keep this terminal open. Docker will start:
+
+```text
+orbitshield-oracle
+orbitshield-api
+orbitshield-tunnel
+```
+
+### 4. Open Swagger
+
+Open this URL in the browser:
+
+```text
+http://localhost:5184/swagger
+```
+
+Swagger is the backend control panel. Use it to register/login users and throw debris objects.
+
+### 5. Get the Wokwi public URL
+
+Open a second PowerShell terminal in the same folder and run:
+
+```powershell
+docker logs orbitshield-tunnel --tail 50
+```
+
+Find the line:
+
+```text
+your url is: https://example.loca.lt
+```
+
+Copy the URL, but use `http://` in Wokwi. Example:
+
+```cpp
+constexpr const char* ApiBaseUrl = "http://example.loca.lt";
+```
+
+Important limitation: localtunnel can generate a new URL if the tunnel restarts. Docker starts the tunnel automatically, but Wokwi cannot automatically edit its browser project files. If the URL changes, paste the new `http://...loca.lt` value into `Config.h` in Wokwi.
+
+### 6. Open the Wokwi simulation
+
+In Wokwi, create/open an ESP32 Arduino project and copy the files from:
+
+```text
+iot/wokwi-orbit-shield
+```
+
+Required files:
+
+```text
+sketch.ino
+diagram.json
+Config.h
+Models.h
+OrbitShieldHttpClient.h
+MissionControlApi.h
+AutonomyEngine.h
+SatelliteSensors.h
+SatelliteActuator.h
+libraries.txt
+```
+
+Update `Config.h` with the tunnel URL from step 5, then click Run.
+
+Expected Wokwi startup:
+
+```text
+Wi-Fi connected. IP: 10.10.0.2
+POST status: 201
+GET status: 200
+Risk classification: ...
+```
+
+You should also see the LCD turn on, the servo self-test, and the red LED turn on only during risk states.
+
+The LCD is intentionally user-friendly:
+
+```text
+SCANNING ORBIT
+TRACKING DEBRIS
+AUTO AVOIDANCE
+IMPACT RISK
+SAFE PASS
+```
+
+Raw telemetry such as temperature, radiation, battery and thrust stays in the Serial Monitor logs.
+
+### 7. Throw random debris from Swagger
+
+In Swagger, use this endpoint as the easiest demo button:
+
+```http
+POST /api/orbital-scenarios/satellites/1/throw-random-debris
+```
+
+Click `Try it out`, then `Execute`. No JSON body is needed.
+
+On the next Wokwi polling cycle, the ESP32 will classify the event:
+
+```text
+SAFE PASS
+NEAR MISS
+AVOIDANCE REQUIRED
+IMPACT PREDICTED
+```
+
+If the event requires avoidance, the red LED turns on, the servo moves, and the backend receives a maneuver log.
+
+### 8. Watch the satellite return by itself
+
+The active debris scenario advances over simulated time. The backend updates the relative position on every `GET /environment`, and the ESP32 recalculates the closest approach every polling cycle.
+
+For demonstration speed, orbital scenario time is accelerated. That means a debris object can approach, trigger avoidance and then pass the satellite within a short classroom demo.
+
+Expected sequence:
+
+```text
+AVOIDANCE REQUIRED -> IMPACT PREDICTED or continued avoidance -> SAFE PASS
+```
+
+When the object has passed:
+
+```text
+LCD shows SAFE PASS
+red LED turns off
+servo returns to nominal
+```
+
+### 9. Optional manual reset
+
+Use this Swagger endpoint:
+
+```http
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=SafePass
+```
+
+Use this only when you want to force the demo back to a safe state immediately.
+
+### 10. Optional Swagger authentication
+
+Some endpoints require login. The IoT demo endpoints are public, but authentication is available for validation.
+
+Register this user if needed:
+
+```json
+{
+  "name": "Orbit Shield Demo",
+  "email": "orbit.demo.2026@orbitshield.local",
+  "password": "OrbitShield123!",
+  "role": "Engineer"
+}
+```
+
+Then login with:
+
+```json
+{
+  "email": "orbit.demo.2026@orbitshield.local",
+  "password": "OrbitShield123!"
+}
+```
+
+Copy `accessToken`, click `Authorize` in Swagger, paste only the token value, and confirm.
+
+### 11. Common Problems
+
+If Wokwi shows Wi-Fi connected but API calls fail:
+
+- Check the tunnel URL with `docker logs orbitshield-tunnel --tail 50`.
+- Make sure `Config.h` uses `http://`, not `https://`.
+- Paste the current tunnel URL into the Wokwi `Config.h`.
+- Restart the Wokwi simulation.
+
+If Swagger opens but Wokwi does not update:
+
+- Wokwi only reads the active backend environment every 5 seconds.
+- Wait one polling cycle after clicking `Execute`.
+- Check the Serial Monitor for `GET status: 200`.
+
+If login says user already exists but login fails:
+
+- Register a different email, or use the existing known password for that email.
+- For the demo user above, use exactly `OrbitShield123!`.
 
 ## Environment Variables
 
@@ -77,13 +287,13 @@ For local Docker Oracle, use `.env.local` based on [.env.local.example](./.env.l
 
 ## Run With Docker
 
-Build and start the API and Oracle:
+Build and start Oracle, the API and the public Wokwi tunnel:
 
 ```powershell
 docker compose up --build
 ```
 
-The API will be available at:
+Docker installs and runs all backend dependencies during the build. The API will be available at:
 
 ```text
 http://localhost:5184
@@ -94,6 +304,32 @@ Swagger:
 ```text
 http://localhost:5184/swagger
 ```
+
+Public tunnel for Wokwi:
+
+```powershell
+docker logs orbitshield-tunnel --tail 50
+```
+
+Look for:
+
+```text
+your url is: https://example.loca.lt
+```
+
+Use the same address with `http://` in `iot/wokwi-orbit-shield/Config.h`, because the Wokwi ESP32 simulation is more reliable over plain HTTP:
+
+```cpp
+constexpr const char* ApiBaseUrl = "http://example.loca.lt";
+```
+
+The current Docker-generated URL during validation was:
+
+```text
+http://itchy-lines-hammer.loca.lt
+```
+
+If the tunnel container restarts, localtunnel can generate a new URL. In that case, update `Config.h` in Wokwi and run the simulation again. A fully automatic update inside Wokwi is not possible because Wokwi stores the sketch files in the browser project, outside Docker.
 
 ## Run Locally Without Docker
 
@@ -161,6 +397,8 @@ POST /api/satellite/orbital-elements
 GET  /api/satellite/orbital-elements?satelliteId=1
 GET  /api/orbital-scenarios/satellites/{satelliteId}/presets
 POST /api/orbital-scenarios/satellites/{satelliteId}/trigger-preset?preset=CriticalImpact
+POST /api/orbital-scenarios/satellites/{satelliteId}/throw-random-debris
+POST /api/orbital-scenarios/satellites/{satelliteId}/spawn-random-debris
 POST /api/orbital-scenarios/satellites/{satelliteId}/spawn-debris
 GET  /api/orbital-scenarios/satellites/{satelliteId}/environment
 ```
@@ -176,6 +414,7 @@ Full endpoint documentation:
 The Wokwi ESP32 will simulate the satellite hardware layer:
 
 - Servo motor as collision avoidance actuator.
+- Red LED as visual collision alert indicator.
 - LCD I2C as mission alert display.
 - Simulated sensor values for temperature, radiation, battery voltage, gravity and thrust.
 
@@ -206,7 +445,66 @@ Use this endpoint while the Wokwi simulation is running:
 POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=CriticalImpact
 ```
 
+Or generate a random debris object with physical characteristics:
+
+```http
+POST /api/orbital-scenarios/satellites/1/spawn-random-debris
+```
+
+Example body:
+
+```json
+{
+  "satelliteId": 1,
+  "safeDistanceKm": 5,
+  "minimumDiameterMeters": 0.05,
+  "maximumDiameterMeters": 8.0
+}
+```
+
+For the fastest Swagger demo, use the no-body endpoint:
+
+```http
+POST /api/orbital-scenarios/satellites/1/throw-random-debris
+```
+
+This acts like a button: it randomly throws an object with randomized size, estimated mass, cross-section, density, closest approach and reaction time. The ESP32 receives the updated environment on the next polling cycle and decides what to do.
+
 After a preset is triggered, the ESP32 reads the new environment on the next polling cycle and recalculates its maneuver autonomously. The actuator is no longer fixed at 90 degrees: the ESP32 computes a maneuver angle from miss distance, time to closest approach and simulated thrust, then returns to the nominal position when the next scenario is safe.
+
+The ESP32 also classifies what it perceived and shows it in the serial monitor and LCD:
+
+```text
+SAFE PASS
+NEAR MISS
+AVOIDANCE REQUIRED
+IMPACT PREDICTED
+```
+
+The red LED turns on during risk/maneuver states and turns off when the next environment is safe.
+
+The LCD shows mission states instead of raw telemetry:
+
+```text
+SCANNING ORBIT: no active threat.
+TRACKING DEBRIS: nearby object, waiting for it to pass.
+AUTO AVOIDANCE: autonomous maneuver in progress.
+IMPACT RISK: late/high-risk object.
+SAFE PASS: object cleared the safety zone.
+```
+
+The environment is time-aware. After debris is thrown, its relative position continues moving using its relative velocity. The ESP32 does not need a manual `SafePass` to recover: once the object has passed and the calculated miss distance is safe, the next polling cycle returns the satellite to nominal. `SafePass` remains available as a manual classroom reset.
+
+The orbital environment includes debris attributes:
+
+```text
+debrisDiameterMeters
+estimatedMassKg
+impactEnergyJoules
+debrisClass
+scenarioClassification
+predictedImpact
+```
 
 Variable maneuver model:
 
@@ -296,6 +594,32 @@ Implemented backend security practices:
 - DTO-based input validation.
 - EF Core parameterized queries to reduce SQL injection risk.
 - Secrets excluded from Git through `.gitignore`.
+
+## Demo Authentication
+
+Swagger may ask for a JWT because protected admin/engineer endpoints exist. IoT demo endpoints are public, but authentication is still available for professor validation.
+
+Register an engineer:
+
+```json
+{
+  "name": "Orbit Shield Demo",
+  "email": "orbit.demo.2026@orbitshield.local",
+  "password": "OrbitShield123!",
+  "role": "Engineer"
+}
+```
+
+Login:
+
+```json
+{
+  "email": "orbit.demo.2026@orbitshield.local",
+  "password": "OrbitShield123!"
+}
+```
+
+Copy `accessToken`, click `Authorize` in Swagger and paste only the token value.
 
 ## Next Steps
 

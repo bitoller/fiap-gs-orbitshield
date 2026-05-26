@@ -17,7 +17,15 @@ public sealed record SpawnDebrisRequest(
     decimal MissDistanceKm,
     decimal SafeDistanceKm,
     decimal DebrisDensityPerKm3,
-    decimal EffectiveCrossSectionM2);
+    decimal EffectiveCrossSectionM2,
+    decimal? DiameterMeters = null,
+    decimal? EstimatedMassKg = null);
+
+public sealed record RandomDebrisRequest(
+    int SatelliteId,
+    decimal SafeDistanceKm = 5,
+    decimal MinimumDiameterMeters = 0.05m,
+    decimal MaximumDiameterMeters = 8.0m);
 
 public sealed record OrbitalScenarioPresetResponse(
     string Name,
@@ -41,6 +49,12 @@ public sealed record OrbitalEnvironmentResponse(
     decimal TimeToClosestApproachSeconds,
     decimal MissDistanceKm,
     decimal RelativeSpeedKmS,
+    decimal DebrisDiameterMeters,
+    decimal EstimatedMassKg,
+    decimal ImpactEnergyJoules,
+    string DebrisClass,
+    string ScenarioClassification,
     decimal CollisionProbability,
     string ProbabilityModel,
-    bool RecommendedEmergency);
+    bool RecommendedEmergency,
+    bool PredictedImpact);

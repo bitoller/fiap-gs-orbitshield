@@ -6,7 +6,7 @@ namespace Config
     constexpr const char* WifiPassword = "";
 
     // Wokwi ESP32 is more reliable with plain HTTP tunnels.
-    constexpr const char* ApiBaseUrl = "http://cold-falcons-guess.loca.lt";
+    constexpr const char* ApiBaseUrl = "http://itchy-lines-hammer.loca.lt";
 
     constexpr int PollingIntervalMs = 5000;
     constexpr int HttpTimeoutMs = 8000;
@@ -17,6 +17,7 @@ namespace Config
     constexpr int LcdSclPin = 22;
     constexpr int DhtPin = 15;
     constexpr int PotentiometerPin = 34;
+    constexpr int AlertLedPin = 19;
 
     constexpr int ServoNominalAngle = 0;
     constexpr int ServoAvoidanceAngle = 90;

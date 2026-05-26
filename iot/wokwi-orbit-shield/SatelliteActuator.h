@@ -16,6 +16,9 @@ public:
 
     void begin()
     {
+        pinMode(Config::AlertLedPin, OUTPUT);
+        digitalWrite(Config::AlertLedPin, LOW);
+
         servo.setPeriodHertz(50);
         servo.attach(Config::ServoPin, 500, 2400);
         servo.write(Config::ServoNominalAngle);
@@ -29,29 +32,30 @@ public:
 
     void showNominal()
     {
+        digitalWrite(Config::AlertLedPin, LOW);
         servo.write(Config::ServoNominalAngle);
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print("ORBIT SHIELD");
         lcd.setCursor(0, 1);
-        lcd.print("STATUS: NOMINAL");
+        lcd.print("SCANNING ORBIT");
     }
 
     void showTelemetry(const SensorReading& reading)
     {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("TEMP:");
-        lcd.print(reading.temperatureCelsius, 1);
-        lcd.print("C");
-        lcd.setCursor(0, 1);
-        lcd.print("THRUST:");
-        lcd.print(reading.simulatedThrust, 0);
-        lcd.print("%");
+        Serial.print("Temperature C: ");
+        Serial.println(reading.temperatureCelsius);
+        Serial.print("Radiation level: ");
+        Serial.println(reading.radiationLevel);
+        Serial.print("Battery voltage: ");
+        Serial.println(reading.batteryVoltage);
+        Serial.print("Simulated thrust: ");
+        Serial.println(reading.simulatedThrust);
     }
 
     void triggerAvoidance(const ConjunctionAlert& alert, float thrustLevel)
     {
+        digitalWrite(Config::AlertLedPin, HIGH);
         servo.write(Config::ServoAvoidanceAngle);
 
         lcd.clear();
@@ -69,19 +73,24 @@ public:
 
     void triggerAutonomousAvoidance(const AutonomyDecision& decision, float thrustLevel)
     {
+        digitalWrite(Config::AlertLedPin, HIGH);
         servo.write(Config::ServoNominalAngle);
         delay(150);
         servo.write(decision.servoAngle);
 
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("AUTO AVOID ");
-        lcd.print(decision.servoAngle);
+        lcd.print(decision.predictedImpact ? "IMPACT RISK" : "AUTO AVOIDANCE");
         lcd.setCursor(0, 1);
-        lcd.print("MISS:");
+        lcd.print("MISS ");
         lcd.print(decision.missDistanceKm, 1);
-        lcd.print("KM");
+        lcd.print(" A");
+        lcd.print(decision.servoAngle);
 
+        if (decision.predictedImpact)
+        {
+            Serial.println("Impact predicted: avoidance attempted too late.");
+        }
         Serial.println("Autonomous collision risk detected onboard.");
         Serial.print("Time to closest approach: ");
         Serial.println(decision.timeToClosestApproachSeconds);
@@ -97,15 +106,14 @@ public:
 
     void showSafePass(const AutonomyDecision& decision)
     {
+        digitalWrite(Config::AlertLedPin, decision.alertLedOn ? HIGH : LOW);
         servo.write(Config::ServoNominalAngle);
 
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("SAFE PASS");
+        lcd.print(safeTitle(decision));
         lcd.setCursor(0, 1);
-        lcd.print("MISS:");
-        lcd.print(decision.missDistanceKm, 1);
-        lcd.print("KM");
+        lcd.print(safeSubtitle(decision));
 
         Serial.println("No avoidance required.");
         Serial.print("Miss distance km: ");
@@ -113,6 +121,36 @@ public:
     }
 
 private:
+    static String safeTitle(const AutonomyDecision& decision)
+    {
+        if (decision.riskLabel == "SAFE PASS")
+        {
+            return "SAFE PASS";
+        }
+
+        if (decision.riskLabel == "NEAR MISS")
+        {
+            return "TRACKING DEBRIS";
+        }
+
+        return "SCANNING ORBIT";
+    }
+
+    static String safeSubtitle(const AutonomyDecision& decision)
+    {
+        if (decision.riskLabel == "SAFE PASS")
+        {
+            return "OBJECT PASSED";
+        }
+
+        if (decision.riskLabel == "NEAR MISS")
+        {
+            return "WAITING PASS";
+        }
+
+        return "NO THREATS";
+    }
+
     void runStartupSelfTest()
     {
         lcd.clear();

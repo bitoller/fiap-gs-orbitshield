@@ -71,6 +71,12 @@ public:
         environment.safeDistanceKm = document["safeDistanceKm"] | 5.0f;
         environment.lookaheadSeconds = document["lookaheadSeconds"] | 120.0f;
         environment.backendCollisionProbability = document["collisionProbability"] | 0.0f;
+        environment.debrisDiameterMeters = document["debrisDiameterMeters"] | 0.0f;
+        environment.estimatedMassKg = document["estimatedMassKg"] | 0.0f;
+        environment.impactEnergyJoules = document["impactEnergyJoules"] | 0.0f;
+        environment.debrisClass = document["debrisClass"] | "";
+        environment.backendClassification = document["scenarioClassification"] | "";
+        environment.predictedImpact = document["predictedImpact"] | false;
 
         environment.relativePositionKm = readVector(document["relativePositionKm"]);
         environment.relativeVelocityKmS = readVector(document["relativeVelocityKmS"]);

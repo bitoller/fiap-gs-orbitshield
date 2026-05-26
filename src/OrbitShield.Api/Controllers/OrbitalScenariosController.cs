@@ -15,6 +15,27 @@ public sealed class OrbitalScenariosController(IOrbitalScenarioService orbitalSc
         return response is null ? NotFound(new { message = "Satellite not found." }) : Ok(response);
     }
 
+    [HttpPost("satellites/{satelliteId:int}/spawn-random-debris")]
+    public async Task<IActionResult> SpawnRandomDebris(int satelliteId, RandomDebrisRequest request, CancellationToken cancellationToken)
+    {
+        var normalizedRequest = request with { SatelliteId = satelliteId };
+        var response = await orbitalScenarios.SpawnRandomDebrisAsync(normalizedRequest, cancellationToken);
+        return response is null ? NotFound(new { message = "Satellite not found." }) : Ok(response);
+    }
+
+    [HttpPost("satellites/{satelliteId:int}/throw-random-debris")]
+    public async Task<IActionResult> ThrowRandomDebris(int satelliteId, CancellationToken cancellationToken)
+    {
+        var request = new RandomDebrisRequest(
+            SatelliteId: satelliteId,
+            SafeDistanceKm: 5,
+            MinimumDiameterMeters: 0.05m,
+            MaximumDiameterMeters: 8.0m);
+
+        var response = await orbitalScenarios.SpawnRandomDebrisAsync(request, cancellationToken);
+        return response is null ? NotFound(new { message = "Satellite not found." }) : Ok(response);
+    }
+
     [HttpPost("satellites/{satelliteId:int}/trigger-preset")]
     public async Task<IActionResult> TriggerPreset(
         int satelliteId,
