@@ -15,8 +15,9 @@ This project simulates the Orbit Shield satellite IoT layer with an ESP32.
 ```text
 ESP32
   -> POST /api/satellite/sensor-readings
-  -> GET  /api/satellite/conjunctions?simulateEmergency=true
-  -> if collisionRisk=true:
+  -> GET  /api/orbital-scenarios/satellites/1/environment
+  -> calculate closest approach onboard
+  -> if missDistance <= safeDistance:
        servo to 90 degrees
        LCD collision warning
        POST /api/satellite/maneuver
@@ -28,8 +29,10 @@ The satellite simulator reacts automatically. No manual action is needed after t
 
 Current MVP behavior:
 
-- Every 5 seconds, the ESP32 requests the latest conjunction status.
-- If the backend returns `collisionRisk=true`, the servo moves to 90 degrees.
+- Every 5 seconds, the ESP32 requests the latest orbital environment.
+- The backend returns relative position and velocity vectors generated from CelesTrak TLE + SGP4 plus an injected debris path.
+- The ESP32 calculates closest approach locally.
+- If `missDistance <= safeDistance`, the servo moves to 90 degrees.
 - The LCD displays the collision alert.
 - The ESP32 posts the maneuver log to Mission Control.
 
@@ -63,7 +66,7 @@ npx -y localtunnel --port 5184
 Current tunnel used during validation:
 
 ```cpp
-constexpr const char* ApiBaseUrl = "http://tender-socks-fall.loca.lt";
+constexpr const char* ApiBaseUrl = "http://cold-falcons-guess.loca.lt";
 ```
 
 Use `http://` for the ESP32 simulation.
@@ -83,6 +86,7 @@ Config.h
 Models.h
 OrbitShieldHttpClient.h
 MissionControlApi.h
+AutonomyEngine.h
 SatelliteSensors.h
 SatelliteActuator.h
 libraries.txt
@@ -96,7 +100,8 @@ Expected serial monitor output:
 Wi-Fi connected. IP: 10.10.0.2
 POST status: 201
 GET status: 200
-Collision alert received.
+Onboard miss distance km: 0.74
+Autonomous collision risk detected onboard.
 POST status: 200
 ```
 

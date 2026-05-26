@@ -17,6 +17,9 @@
 - [x] Create Wokwi ESP32 circuit and source files.
 - [x] Validate Wokwi ESP32 to backend integration through public tunnel.
 - [x] Register IoT test evidence.
+- [x] Add CelesTrak TLE + SGP4 orbital environment endpoint.
+- [x] Add injected debris scenario for realistic intercept simulation.
+- [x] Move collision-risk decision into ESP32 onboard autonomy logic.
 - [ ] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
 - [ ] Validate Android polling against backend telemetry, alerts, sensors and maneuver history.
 - [ ] Collect final screenshots and delivery evidence.

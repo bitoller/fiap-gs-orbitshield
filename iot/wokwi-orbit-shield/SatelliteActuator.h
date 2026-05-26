@@ -64,6 +64,29 @@ public:
         Serial.println(thrustLevel);
     }
 
+    void triggerAutonomousAvoidance(const AutonomyDecision& decision, float thrustLevel)
+    {
+        servo.write(Config::ServoAvoidanceAngle);
+
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("AUTO AVOIDANCE");
+        lcd.setCursor(0, 1);
+        lcd.print("MISS:");
+        lcd.print(decision.missDistanceKm, 1);
+        lcd.print("KM");
+
+        Serial.println("Autonomous collision risk detected onboard.");
+        Serial.print("Time to closest approach: ");
+        Serial.println(decision.timeToClosestApproachSeconds);
+        Serial.print("Miss distance km: ");
+        Serial.println(decision.missDistanceKm);
+        Serial.print("Relative speed km/s: ");
+        Serial.println(decision.relativeSpeedKmS);
+        Serial.print("Thrust level: ");
+        Serial.println(thrustLevel);
+    }
+
 private:
     Servo servo;
     LiquidCrystal_I2C lcd;

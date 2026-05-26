@@ -9,8 +9,8 @@ Last updated: 2026-05-25
 - Docker Compose runs Oracle and the .NET API.
 - Wokwi ESP32 simulation connects to Wi-Fi and sends data to the backend through localtunnel.
 - ESP32 sensor reading POST returns `201`.
-- ESP32 conjunction GET returns `200`.
-- ESP32 detects `DEBRIS-2026` collision risk.
+- Backend provides orbital environment generated from CelesTrak TLE + SGP4 plus injected debris vectors.
+- ESP32 calculates closest approach onboard.
 - ESP32 maneuver POST returns `200`.
 
 ## Validated Wokwi Output

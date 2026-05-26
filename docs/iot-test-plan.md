@@ -2,7 +2,7 @@
 
 ## Scenario
 
-Validate the simulated ESP32 satellite in Wokwi communicating with the .NET Mission Control API through a public tunnel.
+Validate the simulated ESP32 satellite in Wokwi communicating with the .NET Mission Control API through a public tunnel and making an onboard autonomous avoidance decision.
 
 ## Environment
 
@@ -16,9 +16,10 @@ Validate the simulated ESP32 satellite in Wokwi communicating with the .NET Miss
 ```text
 ESP32 connects to Wokwi-GUEST
 ESP32 posts sensor telemetry
-ESP32 requests conjunction risk
-Backend returns critical collision risk
-ESP32 moves servo to 90 degrees
+ESP32 requests orbital environment vectors
+Backend returns CelesTrak TLE + SGP4 based state with injected debris vector
+ESP32 calculates closest approach onboard
+ESP32 moves servo to 90 degrees if miss distance is unsafe
 ESP32 displays collision alert on LCD
 ESP32 posts maneuver log
 Backend persists data in Oracle
@@ -31,9 +32,9 @@ Serial monitor output confirmed:
 ```text
 Wi-Fi connected. IP: 10.10.0.2
 POST /api/satellite/sensor-readings -> 201
-GET /api/satellite/conjunctions?simulateEmergency=true -> 200
-Collision alert received.
-Debris: DEBRIS-2026
+GET /api/orbital-scenarios/satellites/1/environment -> 200
+Onboard miss distance km: 0.74
+Autonomous collision risk detected onboard.
 POST /api/satellite/maneuver -> 200
 ```
 

@@ -43,26 +43,28 @@ Android Engineer Panel
 - Represent gravity as a simulated telemetry value.
 - Represent avoidance actuation with a servo motor at 90 degrees.
 - Use REST polling every 5 seconds for the MVP automatic reaction loop.
+- Upgrade collision behavior from fixed placeholder to CelesTrak TLE + SGP4 satellite propagation plus injected debris vectors.
+- Keep the maneuver decision onboard: ESP32 calculates closest approach from relative vectors.
 
 ## Space Domain Interpretation
 
 The Wokwi circuit is not a physical spacecraft implementation. It demonstrates the software integration pattern:
 
-- Backend performs mission analysis.
+- Backend performs mission analysis and provides orbital environment vectors.
 - Satellite simulator sends telemetry.
-- Satellite simulator reacts to a collision alert.
+- Satellite simulator calculates closest approach and reacts autonomously.
 - Backend stores the maneuver and sensor readings.
 
 In a real satellite, the servo would be replaced by reaction wheels, magnetorquers or thrusters controlled by flight software.
 
-The prototype should be described as a software integration and decision-loop MVP. It validates telemetry ingestion, mission-control analysis, alert propagation and maneuver logging. It does not claim to simulate full spacecraft dynamics inside Wokwi.
+The prototype should be described as a software integration and decision-loop MVP. It validates telemetry ingestion, mission-control analysis, orbital-vector propagation, onboard risk calculation and maneuver logging. It does not claim to simulate full spacecraft dynamics inside Wokwi.
 
 ## Lag Strategy
 
-The MVP solves the automatic reaction requirement through periodic polling:
+The MVP solves the automatic reaction requirement through periodic polling, while keeping the maneuver decision onboard:
 
 ```text
-ESP32 -> GET conjunction status every 5 seconds -> automatic actuator response
+ESP32 -> GET orbital environment vectors every 5 seconds -> onboard closest-approach calculation -> automatic actuator response
 ```
 
 This bounds the delay to roughly one polling interval plus HTTP latency.

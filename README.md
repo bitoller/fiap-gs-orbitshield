@@ -50,6 +50,8 @@ Implemented features:
 - ESP32 maneuver logging.
 - Sensor readings with simulated gravity and thrust.
 - TLE orbital element storage.
+- CelesTrak TLE + SGP4 orbital environment endpoint.
+- Onboard closest-approach autonomy flow for Wokwi.
 - Backend test plan and ER diagram documentation.
 
 ## Requirements
@@ -155,12 +157,15 @@ POST /api/satellite/sensor-readings
 GET  /api/satellite/sensor-readings/latest?satelliteId=1
 POST /api/satellite/orbital-elements
 GET  /api/satellite/orbital-elements?satelliteId=1
+POST /api/orbital-scenarios/satellites/{satelliteId}/spawn-debris
+GET  /api/orbital-scenarios/satellites/{satelliteId}/environment
 ```
 
 Full endpoint documentation:
 
 - [API Endpoints](./docs/api-endpoints.md)
 - [IoT Test Evidence](./docs/iot-test-plan.md)
+- [Orbital Autonomy Model](./docs/orbital-autonomy.md)
 
 ## IoT Simulation Scope
 
@@ -179,6 +184,8 @@ Gravity and thrust are represented as simulated telemetry fields and persisted b
 }
 ```
 
+The current autonomy flow is no longer a fixed collision placeholder. The backend obtains public TLE data from CelesTrak, propagates the satellite state with SGP4 and injects a debris approach vector. The ESP32 receives relative position and velocity and calculates closest approach locally before deciding to move the servo.
+
 ## Real Satellite Interpretation
 
 The Wokwi circuit is a functional software-integration prototype, not a literal spacecraft hardware design.
@@ -189,19 +196,19 @@ In the MVP:
 - The servo motor represents a visible avoidance actuator.
 - The potentiometer represents simulated thrust intensity.
 - The DHT22 represents thermal telemetry.
-- The backend represents Mission Control and performs the collision-risk decision.
+- The backend represents Mission Control and provides orbital environment data.
 
 In a real satellite, the same software flow would be adapted to space-grade hardware:
 
 - The ESP32 would be replaced by a radiation-tolerant onboard computer or flight controller.
 - The servo movement would be replaced by reaction wheels, magnetorquers or chemical/electric thrusters.
 - Simulated gravity and thrust values would come from orbital dynamics, IMU data, propulsion telemetry and flight software.
-- Collision risk would use propagated orbital elements, such as TLE/SGP4 or more precise ephemeris models, instead of the MVP emergency simulation.
+- Collision risk uses propagated orbital elements in the backend and an onboard closest-approach decision in the ESP32 simulation.
 
 So the prototype validates the distributed architecture and decision loop:
 
 ```text
-Telemetry -> Mission analysis -> Collision alert -> Avoidance command -> Maneuver log
+Telemetry -> Mission analysis -> Orbital vectors -> Onboard risk decision -> Maneuver log
 ```
 
 It does not claim to reproduce full orbital mechanics inside Wokwi.
@@ -211,13 +218,13 @@ It does not claim to reproduce full orbital mechanics inside Wokwi.
 The MVP already demonstrates automatic satellite reaction:
 
 ```text
-Backend detects/simulates collision risk
+Backend propagates TLE and injects debris approach vector
         |
         v
-ESP32 polls Mission Control every 5 seconds
+ESP32 polls Mission Control every 5 seconds for orbital vectors
         |
         v
-ESP32 receives collisionRisk=true
+ESP32 calculates closest approach onboard
         |
         v
 Servo moves to 90 degrees and LCD shows collision alert

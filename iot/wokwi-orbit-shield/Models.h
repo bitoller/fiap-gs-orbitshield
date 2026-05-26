@@ -28,3 +28,31 @@ struct ManeuverCommand
     float thrustLevel = 0.0f;
     String source = "ESP32";
 };
+
+struct OrbitalVector
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+};
+
+struct OrbitalEnvironment
+{
+    int satelliteId = 1;
+    String satelliteCode = "ORB-01";
+    String source = "";
+    String tleName = "";
+    OrbitalVector relativePositionKm;
+    OrbitalVector relativeVelocityKmS;
+    float safeDistanceKm = 5.0f;
+    float lookaheadSeconds = 120.0f;
+    float backendCollisionProbability = 0.0f;
+};
+
+struct AutonomyDecision
+{
+    bool collisionRisk = false;
+    float timeToClosestApproachSeconds = 0.0f;
+    float missDistanceKm = 0.0f;
+    float relativeSpeedKmS = 0.0f;
+};

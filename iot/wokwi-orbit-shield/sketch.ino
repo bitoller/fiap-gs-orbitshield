@@ -1,3 +1,4 @@
+#include "AutonomyEngine.h"
 #include "Config.h"
 #include "MissionControlApi.h"
 #include "OrbitShieldHttpClient.h"
@@ -8,6 +9,7 @@ OrbitShieldHttpClient networkClient;
 MissionControlApi missionControl(networkClient);
 SatelliteSensors satelliteSensors;
 SatelliteActuator satelliteActuator;
+AutonomyEngine autonomyEngine;
 
 unsigned long lastPollingTime = 0;
 
@@ -37,15 +39,19 @@ void loop()
     satelliteActuator.showTelemetry(reading);
     missionControl.postSensorReading(reading);
 
-    ConjunctionAlert alert;
-    if (!missionControl.getConjunctionAlert(alert))
+    OrbitalEnvironment environment;
+    if (!missionControl.getOrbitalEnvironment(environment))
     {
         return;
     }
 
-    if (alert.collisionRisk)
+    AutonomyDecision decision = autonomyEngine.evaluate(environment);
+    Serial.print("Onboard miss distance km: ");
+    Serial.println(decision.missDistanceKm);
+
+    if (decision.collisionRisk)
     {
-        satelliteActuator.triggerAvoidance(alert, reading.simulatedThrust);
+        satelliteActuator.triggerAutonomousAvoidance(decision, reading.simulatedThrust);
 
         ManeuverCommand maneuver;
         maneuver.satelliteId = Config::SatelliteId;

@@ -43,6 +43,41 @@ public:
         return true;
     }
 
+    bool getOrbitalEnvironment(OrbitalEnvironment& environment)
+    {
+        String body;
+        const String url = baseUrl() + "/api/orbital-scenarios/satellites/" + String(Config::SatelliteId) + "/environment";
+
+        if (!network.get(url, body))
+        {
+            Serial.println("Failed to read orbital environment.");
+            Serial.println(body);
+            return false;
+        }
+
+        JsonDocument document;
+        const DeserializationError error = deserializeJson(document, body);
+        if (error)
+        {
+            Serial.print("Invalid orbital environment JSON: ");
+            Serial.println(error.c_str());
+            return false;
+        }
+
+        environment.satelliteId = document["satelliteId"] | Config::SatelliteId;
+        environment.satelliteCode = document["satelliteCode"] | "ORB-01";
+        environment.source = document["source"] | "";
+        environment.tleName = document["tleName"] | "";
+        environment.safeDistanceKm = document["safeDistanceKm"] | 5.0f;
+        environment.lookaheadSeconds = document["lookaheadSeconds"] | 120.0f;
+        environment.backendCollisionProbability = document["collisionProbability"] | 0.0f;
+
+        environment.relativePositionKm = readVector(document["relativePositionKm"]);
+        environment.relativeVelocityKmS = readVector(document["relativeVelocityKmS"]);
+
+        return true;
+    }
+
     bool postSensorReading(const SensorReading& reading)
     {
         JsonDocument document;
@@ -105,5 +140,14 @@ private:
         }
 
         return url;
+    }
+
+    static OrbitalVector readVector(JsonVariantConst variant)
+    {
+        OrbitalVector vector;
+        vector.x = variant["x"] | 0.0f;
+        vector.y = variant["y"] | 0.0f;
+        vector.z = variant["z"] | 0.0f;
+        return vector;
     }
 };

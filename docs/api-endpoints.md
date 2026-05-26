@@ -35,6 +35,8 @@ http://localhost:5184
 | GET | `/api/satellite/sensor-readings/latest?satelliteId=1` | Public for IoT demo | Return latest sensor reading. |
 | POST | `/api/satellite/orbital-elements` | Admin, Engineer | Store TLE orbital elements. |
 | GET | `/api/satellite/orbital-elements?satelliteId=1` | Admin, Engineer | List TLE orbital elements. |
+| POST | `/api/orbital-scenarios/satellites/{satelliteId}/spawn-debris` | Public for IoT demo | Inject a debris approach scenario around a propagated TLE orbit. |
+| GET | `/api/orbital-scenarios/satellites/{satelliteId}/environment` | Public for IoT demo | Return relative orbital vectors for onboard autonomous risk calculation. |
 
 Swagger is available at:
 
