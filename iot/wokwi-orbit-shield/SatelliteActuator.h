@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <ESP32Servo.h>
 #include <LiquidCrystal_I2C.h>
+#include <Wire.h>
 #include "Config.h"
 #include "Models.h"
 
@@ -19,8 +20,10 @@ public:
         servo.attach(Config::ServoPin, 500, 2400);
         servo.write(Config::ServoNominalAngle);
 
+        Wire.begin(Config::LcdSdaPin, Config::LcdSclPin);
         lcd.init();
         lcd.backlight();
+        runStartupSelfTest();
         showNominal();
     }
 
@@ -66,6 +69,8 @@ public:
 
     void triggerAutonomousAvoidance(const AutonomyDecision& decision, float thrustLevel)
     {
+        servo.write(Config::ServoNominalAngle);
+        delay(150);
         servo.write(Config::ServoAvoidanceAngle);
 
         lcd.clear();
@@ -88,6 +93,22 @@ public:
     }
 
 private:
+    void runStartupSelfTest()
+    {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("ACTUATOR TEST");
+        lcd.setCursor(0, 1);
+        lcd.print("SERVO + LCD OK");
+
+        servo.write(Config::ServoNominalAngle);
+        delay(400);
+        servo.write(Config::ServoAvoidanceAngle);
+        delay(500);
+        servo.write(Config::ServoNominalAngle);
+        delay(400);
+    }
+
     Servo servo;
     LiquidCrystal_I2C lcd;
 };

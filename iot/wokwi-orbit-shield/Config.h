@@ -13,6 +13,8 @@ namespace Config
 
     constexpr int SatelliteId = 1;
     constexpr int ServoPin = 18;
+    constexpr int LcdSdaPin = 21;
+    constexpr int LcdSclPin = 22;
     constexpr int DhtPin = 15;
     constexpr int PotentiometerPin = 34;
 
