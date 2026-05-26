@@ -55,4 +55,5 @@ struct AutonomyDecision
     float timeToClosestApproachSeconds = 0.0f;
     float missDistanceKm = 0.0f;
     float relativeSpeedKmS = 0.0f;
+    int servoAngle = 0;
 };

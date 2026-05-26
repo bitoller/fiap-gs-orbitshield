@@ -18,9 +18,11 @@ ESP32
   -> GET  /api/orbital-scenarios/satellites/1/environment
   -> calculate closest approach onboard
   -> if missDistance <= safeDistance:
-       servo to 90 degrees
+       calculate servo angle from severity, urgency and thrust
        LCD collision warning
        POST /api/satellite/maneuver
+  -> if missDistance > safeDistance:
+       return servo to nominal position
 ```
 
 ## Automatic Reaction and Lag
@@ -32,9 +34,30 @@ Current MVP behavior:
 - Every 5 seconds, the ESP32 requests the latest orbital environment.
 - The backend returns relative position and velocity vectors generated from CelesTrak TLE + SGP4 plus an injected debris path.
 - The ESP32 calculates closest approach locally.
-- If `missDistance <= safeDistance`, the servo moves to 90 degrees.
+- If `missDistance <= safeDistance`, the ESP32 calculates an avoidance angle from miss distance, time to closest approach and simulated thrust.
 - The LCD displays the collision alert.
 - The ESP32 posts the maneuver log to Mission Control.
+- If a later scenario is safe, the servo returns to the nominal position.
+
+Swagger can trigger named scenarios while Wokwi is running:
+
+```text
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=SafePass
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=NearMiss
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=CriticalImpact
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=LateDetection
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=DenseDebrisField
+```
+
+The next ESP32 polling cycle reads the selected environment and recalculates the maneuver autonomously.
+
+The actuator angle is calculated onboard:
+
+```text
+servoAngle = 25 + distanceSeverity * 40 + urgency * 15 + thrustAuthority * 10
+```
+
+The result is constrained between 25 and 90 degrees. This keeps the demo simple while proving that the satellite simulator is not just executing a fixed movement.
 
 This polling strategy keeps the implementation simple and free for the academic MVP. The expected delay is up to one polling cycle plus the HTTP request time.
 
@@ -102,7 +125,17 @@ POST status: 201
 GET status: 200
 Onboard miss distance km: 0.74
 Autonomous collision risk detected onboard.
+Servo angle: 72
 POST status: 200
+```
+
+Safe-pass scenario output:
+
+```text
+GET status: 200
+Onboard miss distance km: 6.53
+No avoidance required.
+Miss distance km: 6.53
 ```
 
 If the tunnel is restarted, the URL may change. Update `Config.h` again with the new public URL.

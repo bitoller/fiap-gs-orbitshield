@@ -49,6 +49,37 @@ risk = missDistance <= safeDistance
 
 If risk is true, the ESP32 moves the servo to 90 degrees and posts the maneuver to Mission Control.
 
+The current Wokwi behavior uses a variable actuator angle instead of a fixed movement:
+
+```text
+servoAngle = 25 + distanceSeverity * 40 + urgency * 15 + thrustAuthority * 10
+```
+
+Where:
+
+- `distanceSeverity` increases as miss distance gets closer to zero;
+- `urgency` increases as time to closest approach gets shorter;
+- `thrustAuthority` comes from the potentiometer-simulated propulsion value.
+
+The result is constrained between 25 and 90 degrees. If a later scenario is safe, the ESP32 returns the servo to the nominal angle.
+
+## Named Test Scenarios
+
+The backend exposes presets for live Swagger demonstrations:
+
+```text
+GET  /api/orbital-scenarios/satellites/1/presets
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=CriticalImpact
+```
+
+Available presets:
+
+- `SafePass`
+- `NearMiss`
+- `CriticalImpact`
+- `LateDetection`
+- `DenseDebrisField`
+
 ## Probability Formula From The Presentation
 
 Page 7 of the project deck references:

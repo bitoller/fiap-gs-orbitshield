@@ -10,6 +10,14 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
     private static readonly HttpClient HttpClient = new();
     private static OrbitalEnvironmentResponse? activeScenario;
 
+    public IReadOnlyCollection<OrbitalScenarioPresetResponse> ListPresets(int satelliteId) =>
+        Enum.GetValues<OrbitalScenarioPreset>()
+            .Select(preset => new OrbitalScenarioPresetResponse(
+                preset.ToString(),
+                Describe(preset),
+                CreatePresetRequest(satelliteId, preset)))
+            .ToArray();
+
     public async Task<OrbitalEnvironmentResponse?> SpawnDebrisAsync(SpawnDebrisRequest request, CancellationToken cancellationToken = default)
     {
         var satellite = await satellites.GetByIdAsync(request.SatelliteId, cancellationToken);
@@ -61,6 +69,9 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
 
         return activeScenario;
     }
+
+    public Task<OrbitalEnvironmentResponse?> SpawnPresetAsync(int satelliteId, OrbitalScenarioPreset preset, CancellationToken cancellationToken = default) =>
+        SpawnDebrisAsync(CreatePresetRequest(satelliteId, preset), cancellationToken);
 
     public async Task<OrbitalEnvironmentResponse?> GetEnvironmentAsync(int satelliteId, CancellationToken cancellationToken = default)
     {
@@ -134,6 +145,63 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
 
     private static decimal Clamp(decimal value, decimal min, decimal max) =>
         Math.Min(Math.Max(value, min), max);
+
+    private static SpawnDebrisRequest CreatePresetRequest(int satelliteId, OrbitalScenarioPreset preset) =>
+        preset switch
+        {
+            OrbitalScenarioPreset.SafePass => new SpawnDebrisRequest(
+                satelliteId,
+                ApproachTimeSeconds: 120,
+                MissDistanceKm: 12,
+                SafeDistanceKm: 5,
+                DebrisDensityPerKm3: 0.000000005m,
+                EffectiveCrossSectionM2: 1000000m),
+
+            OrbitalScenarioPreset.NearMiss => new SpawnDebrisRequest(
+                satelliteId,
+                ApproachTimeSeconds: 120,
+                MissDistanceKm: 4.8m,
+                SafeDistanceKm: 5,
+                DebrisDensityPerKm3: 0.000000010m,
+                EffectiveCrossSectionM2: 2500000m),
+
+            OrbitalScenarioPreset.CriticalImpact => new SpawnDebrisRequest(
+                satelliteId,
+                ApproachTimeSeconds: 75,
+                MissDistanceKm: 0.5m,
+                SafeDistanceKm: 5,
+                DebrisDensityPerKm3: 0.000000015m,
+                EffectiveCrossSectionM2: 4000000m),
+
+            OrbitalScenarioPreset.LateDetection => new SpawnDebrisRequest(
+                satelliteId,
+                ApproachTimeSeconds: 25,
+                MissDistanceKm: 1.2m,
+                SafeDistanceKm: 5,
+                DebrisDensityPerKm3: 0.000000020m,
+                EffectiveCrossSectionM2: 4000000m),
+
+            OrbitalScenarioPreset.DenseDebrisField => new SpawnDebrisRequest(
+                satelliteId,
+                ApproachTimeSeconds: 90,
+                MissDistanceKm: 3.5m,
+                SafeDistanceKm: 6,
+                DebrisDensityPerKm3: 0.000000050m,
+                EffectiveCrossSectionM2: 6000000m),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(preset), preset, "Unknown orbital scenario preset.")
+        };
+
+    private static string Describe(OrbitalScenarioPreset preset) =>
+        preset switch
+        {
+            OrbitalScenarioPreset.SafePass => "Debris passes outside the safety volume. The ESP32 should keep the actuator nominal.",
+            OrbitalScenarioPreset.NearMiss => "Debris crosses near the safety boundary. The ESP32 should perform a mild avoidance maneuver.",
+            OrbitalScenarioPreset.CriticalImpact => "Debris crosses deep inside the safety volume. The ESP32 should command a strong avoidance maneuver.",
+            OrbitalScenarioPreset.LateDetection => "Debris is detected with little reaction time. The ESP32 should command an urgent maneuver.",
+            OrbitalScenarioPreset.DenseDebrisField => "Higher debris density and cross-section produce a stronger probability signal.",
+            _ => "Unknown scenario."
+        };
 
     private sealed record CelesTrakTle(string Name, string Line1, string Line2);
     private sealed record OrbitalAnalysis(decimal TimeToClosestApproachSeconds, decimal MissDistanceKm, decimal RelativeSpeedKmS, decimal CollisionProbability);

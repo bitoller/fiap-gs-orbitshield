@@ -51,7 +51,9 @@ Implemented features:
 - Sensor readings with simulated gravity and thrust.
 - TLE orbital element storage.
 - CelesTrak TLE + SGP4 orbital environment endpoint.
+- Swagger-triggered orbital scenario presets.
 - Onboard closest-approach autonomy flow for Wokwi.
+- Variable ESP32 avoidance angle with safe-pass return.
 - Backend test plan and ER diagram documentation.
 
 ## Requirements
@@ -157,6 +159,8 @@ POST /api/satellite/sensor-readings
 GET  /api/satellite/sensor-readings/latest?satelliteId=1
 POST /api/satellite/orbital-elements
 GET  /api/satellite/orbital-elements?satelliteId=1
+GET  /api/orbital-scenarios/satellites/{satelliteId}/presets
+POST /api/orbital-scenarios/satellites/{satelliteId}/trigger-preset?preset=CriticalImpact
 POST /api/orbital-scenarios/satellites/{satelliteId}/spawn-debris
 GET  /api/orbital-scenarios/satellites/{satelliteId}/environment
 ```
@@ -185,6 +189,32 @@ Gravity and thrust are represented as simulated telemetry fields and persisted b
 ```
 
 The current autonomy flow is no longer a fixed collision placeholder. The backend obtains public TLE data from CelesTrak, propagates the satellite state with SGP4 and injects a debris approach vector. The ESP32 receives relative position and velocity and calculates closest approach locally before deciding to move the servo.
+
+Swagger can trigger named orbital scenarios for live demonstrations:
+
+```text
+SafePass
+NearMiss
+CriticalImpact
+LateDetection
+DenseDebrisField
+```
+
+Use this endpoint while the Wokwi simulation is running:
+
+```http
+POST /api/orbital-scenarios/satellites/1/trigger-preset?preset=CriticalImpact
+```
+
+After a preset is triggered, the ESP32 reads the new environment on the next polling cycle and recalculates its maneuver autonomously. The actuator is no longer fixed at 90 degrees: the ESP32 computes a maneuver angle from miss distance, time to closest approach and simulated thrust, then returns to the nominal position when the next scenario is safe.
+
+Variable maneuver model:
+
+```text
+servoAngle = 25 + distanceSeverity * 40 + urgency * 15 + thrustAuthority * 10
+```
+
+The result is constrained between 25 and 90 degrees.
 
 ## Real Satellite Interpretation
 
@@ -227,7 +257,7 @@ ESP32 polls Mission Control every 5 seconds for orbital vectors
 ESP32 calculates closest approach onboard
         |
         v
-Servo moves to 90 degrees and LCD shows collision alert
+Servo moves according to maneuver severity and LCD shows collision alert
         |
         v
 ESP32 posts the maneuver log back to the backend
@@ -270,6 +300,6 @@ Implemented backend security practices:
 ## Next Steps
 
 1. Open the Wokwi ESP32 simulation in [iot/wokwi-orbit-shield](./iot/wokwi-orbit-shield).
-2. Expose the backend with an HTTPS tunnel and update `Config.h`.
+2. Expose the backend with a public HTTP tunnel and update `Config.h`.
 3. Build the Android Kotlin app with MVVM and Jetpack Compose.
 4. Collect final screenshots, logs and test evidence for submission.

@@ -15,6 +15,23 @@ public sealed class OrbitalScenariosController(IOrbitalScenarioService orbitalSc
         return response is null ? NotFound(new { message = "Satellite not found." }) : Ok(response);
     }
 
+    [HttpPost("satellites/{satelliteId:int}/trigger-preset")]
+    public async Task<IActionResult> TriggerPreset(
+        int satelliteId,
+        [FromQuery] OrbitalScenarioPreset preset,
+        CancellationToken cancellationToken)
+    {
+        var response = await orbitalScenarios.SpawnPresetAsync(satelliteId, preset, cancellationToken);
+        return response is null ? NotFound(new { message = "Satellite not found." }) : Ok(response);
+    }
+
+    [HttpGet("satellites/{satelliteId:int}/presets")]
+    public IActionResult ListPresets(int satelliteId)
+    {
+        var response = orbitalScenarios.ListPresets(satelliteId);
+        return Ok(response);
+    }
+
     [HttpGet("satellites/{satelliteId:int}/environment")]
     public async Task<IActionResult> GetEnvironment(int satelliteId, CancellationToken cancellationToken)
     {

@@ -20,6 +20,8 @@
 - [x] Add CelesTrak TLE + SGP4 orbital environment endpoint.
 - [x] Add injected debris scenario for realistic intercept simulation.
 - [x] Move collision-risk decision into ESP32 onboard autonomy logic.
+- [x] Add named Swagger-triggered orbital scenario presets.
+- [x] Add variable ESP32 avoidance angle and safe-pass return behavior.
 - [ ] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
 - [ ] Validate Android polling against backend telemetry, alerts, sensors and maneuver history.
 - [ ] Collect final screenshots and delivery evidence.

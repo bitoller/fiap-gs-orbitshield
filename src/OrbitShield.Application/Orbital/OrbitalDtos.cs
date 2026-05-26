@@ -1,5 +1,14 @@
 namespace OrbitShield.Application.Orbital;
 
+public enum OrbitalScenarioPreset
+{
+    SafePass,
+    NearMiss,
+    CriticalImpact,
+    LateDetection,
+    DenseDebrisField
+}
+
 public sealed record OrbitalVectorResponse(decimal X, decimal Y, decimal Z);
 
 public sealed record SpawnDebrisRequest(
@@ -9,6 +18,11 @@ public sealed record SpawnDebrisRequest(
     decimal SafeDistanceKm,
     decimal DebrisDensityPerKm3,
     decimal EffectiveCrossSectionM2);
+
+public sealed record OrbitalScenarioPresetResponse(
+    string Name,
+    string Description,
+    SpawnDebrisRequest Request);
 
 public sealed record OrbitalEnvironmentResponse(
     int SatelliteId,

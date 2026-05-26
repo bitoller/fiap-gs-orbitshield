@@ -35,8 +35,22 @@ http://localhost:5184
 | GET | `/api/satellite/sensor-readings/latest?satelliteId=1` | Public for IoT demo | Return latest sensor reading. |
 | POST | `/api/satellite/orbital-elements` | Admin, Engineer | Store TLE orbital elements. |
 | GET | `/api/satellite/orbital-elements?satelliteId=1` | Admin, Engineer | List TLE orbital elements. |
+| GET | `/api/orbital-scenarios/satellites/{satelliteId}/presets` | Public for IoT demo | List named orbital scenarios for Swagger demonstrations. |
+| POST | `/api/orbital-scenarios/satellites/{satelliteId}/trigger-preset?preset=CriticalImpact` | Public for IoT demo | Trigger a named orbital scenario for the ESP32 to recalculate autonomously. |
 | POST | `/api/orbital-scenarios/satellites/{satelliteId}/spawn-debris` | Public for IoT demo | Inject a debris approach scenario around a propagated TLE orbit. |
 | GET | `/api/orbital-scenarios/satellites/{satelliteId}/environment` | Public for IoT demo | Return relative orbital vectors for onboard autonomous risk calculation. |
+
+## Orbital Scenario Presets
+
+Swagger can trigger these named scenarios:
+
+| Preset | Expected ESP32 behavior |
+| --- | --- |
+| `SafePass` | No maneuver. The actuator returns to nominal. |
+| `NearMiss` | Mild avoidance maneuver near the safety boundary. |
+| `CriticalImpact` | Strong avoidance maneuver for a deep safety-zone crossing. |
+| `LateDetection` | Urgent maneuver because reaction time is short. |
+| `DenseDebrisField` | Stronger probability signal from density and cross-section. |
 
 Swagger is available at:
 

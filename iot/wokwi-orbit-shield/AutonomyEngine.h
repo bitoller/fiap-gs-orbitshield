@@ -1,12 +1,13 @@
 #pragma once
 
 #include <Arduino.h>
+#include "Config.h"
 #include "Models.h"
 
 class AutonomyEngine
 {
 public:
-    AutonomyDecision evaluate(const OrbitalEnvironment& environment) const
+    AutonomyDecision evaluate(const OrbitalEnvironment& environment, const SensorReading& reading) const
     {
         AutonomyDecision decision;
 
@@ -30,6 +31,7 @@ public:
         decision.missDistanceKm = missDistance;
         decision.relativeSpeedKmS = relativeSpeed;
         decision.collisionRisk = missDistance <= environment.safeDistanceKm;
+        decision.servoAngle = calculateServoAngle(decision, environment, reading);
 
         return decision;
     }
@@ -53,5 +55,31 @@ private:
     static OrbitalVector multiply(const OrbitalVector& vector, float scalar)
     {
         return { vector.x * scalar, vector.y * scalar, vector.z * scalar };
+    }
+
+    static int calculateServoAngle(
+        const AutonomyDecision& decision,
+        const OrbitalEnvironment& environment,
+        const SensorReading& reading)
+    {
+        if (!decision.collisionRisk)
+        {
+            return Config::ServoNominalAngle;
+        }
+
+        const float distanceSeverity = constrain(
+            1.0f - (decision.missDistanceKm / max(environment.safeDistanceKm, 0.1f)),
+            0.0f,
+            1.0f);
+
+        const float urgency = constrain(
+            1.0f - (decision.timeToClosestApproachSeconds / max(environment.lookaheadSeconds, 1.0f)),
+            0.0f,
+            1.0f);
+
+        const float thrustAuthority = constrain(reading.simulatedThrust / 100.0f, 0.0f, 1.0f);
+        const float angle = 25.0f + (distanceSeverity * 40.0f) + (urgency * 15.0f) + (thrustAuthority * 10.0f);
+
+        return constrain(static_cast<int>(round(angle)), 25, Config::ServoAvoidanceAngle);
     }
 };

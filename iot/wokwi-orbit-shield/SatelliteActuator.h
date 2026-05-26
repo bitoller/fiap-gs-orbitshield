@@ -71,11 +71,12 @@ public:
     {
         servo.write(Config::ServoNominalAngle);
         delay(150);
-        servo.write(Config::ServoAvoidanceAngle);
+        servo.write(decision.servoAngle);
 
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("AUTO AVOIDANCE");
+        lcd.print("AUTO AVOID ");
+        lcd.print(decision.servoAngle);
         lcd.setCursor(0, 1);
         lcd.print("MISS:");
         lcd.print(decision.missDistanceKm, 1);
@@ -88,8 +89,27 @@ public:
         Serial.println(decision.missDistanceKm);
         Serial.print("Relative speed km/s: ");
         Serial.println(decision.relativeSpeedKmS);
+        Serial.print("Servo angle: ");
+        Serial.println(decision.servoAngle);
         Serial.print("Thrust level: ");
         Serial.println(thrustLevel);
+    }
+
+    void showSafePass(const AutonomyDecision& decision)
+    {
+        servo.write(Config::ServoNominalAngle);
+
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("SAFE PASS");
+        lcd.setCursor(0, 1);
+        lcd.print("MISS:");
+        lcd.print(decision.missDistanceKm, 1);
+        lcd.print("KM");
+
+        Serial.println("No avoidance required.");
+        Serial.print("Miss distance km: ");
+        Serial.println(decision.missDistanceKm);
     }
 
 private:

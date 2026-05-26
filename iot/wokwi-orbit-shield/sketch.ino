@@ -12,6 +12,8 @@ SatelliteActuator satelliteActuator;
 AutonomyEngine autonomyEngine;
 
 unsigned long lastPollingTime = 0;
+bool avoidanceActive = false;
+int lastServoAngle = Config::ServoNominalAngle;
 
 void setup()
 {
@@ -45,18 +47,34 @@ void loop()
         return;
     }
 
-    AutonomyDecision decision = autonomyEngine.evaluate(environment);
+    AutonomyDecision decision = autonomyEngine.evaluate(environment, reading);
     Serial.print("Onboard miss distance km: ");
     Serial.println(decision.missDistanceKm);
 
     if (decision.collisionRisk)
     {
-        satelliteActuator.triggerAutonomousAvoidance(decision, reading.simulatedThrust);
+        const bool shouldLogManeuver = !avoidanceActive || abs(decision.servoAngle - lastServoAngle) >= 3;
 
-        ManeuverCommand maneuver;
-        maneuver.satelliteId = Config::SatelliteId;
-        maneuver.servoAngle = Config::ServoAvoidanceAngle;
-        maneuver.thrustLevel = reading.simulatedThrust;
-        missionControl.postManeuver(maneuver);
+        satelliteActuator.triggerAutonomousAvoidance(decision, reading.simulatedThrust);
+        avoidanceActive = true;
+        lastServoAngle = decision.servoAngle;
+
+        if (shouldLogManeuver)
+        {
+            ManeuverCommand maneuver;
+            maneuver.satelliteId = Config::SatelliteId;
+            maneuver.servoAngle = decision.servoAngle;
+            maneuver.thrustLevel = reading.simulatedThrust;
+            missionControl.postManeuver(maneuver);
+        }
+
+        return;
+    }
+
+    if (avoidanceActive)
+    {
+        satelliteActuator.showSafePass(decision);
+        avoidanceActive = false;
+        lastServoAngle = Config::ServoNominalAngle;
     }
 }
