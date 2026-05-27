@@ -101,7 +101,7 @@ currentRelativePosition = initialRelativePosition + relativeVelocity * elapsedSi
 
 The simulation uses accelerated time for classroom demonstration. This allows an object to approach, trigger avoidance and pass the satellite within a short Wokwi run.
 
-The ESP32 keeps polling the environment and recalculating locally. When the object has passed and the projected miss distance becomes safe, the ESP32 returns the servo to nominal and turns off the red LED without requiring a manual `SafePass`.
+The ESP32 keeps polling the environment and recalculating locally. Each random debris injection represents one object. Its initial risk classification remains stable while it approaches, and the backend changes the state to `SAFE PASS` only after the object has crossed the closest-approach window. At that point, the ESP32 returns the servo to nominal and turns off the red LED without requiring a manual `SafePass`.
 
 `SafePass` remains available only as a manual reset/demo shortcut.
 

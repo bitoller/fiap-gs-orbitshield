@@ -25,6 +25,7 @@
 - [x] Add random debris generation with physical attributes and impact prediction.
 - [x] Show onboard risk classification in Wokwi logs, LCD and red alert LED.
 - [x] Add time-aware debris progression so Wokwi can return to safe state automatically.
-- [ ] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
+- [x] Build Android Kotlin app with MVVM, Retrofit, StateFlow and Jetpack Compose.
+- [x] Validate Android debug build with Gradle Wrapper.
 - [ ] Validate Android polling against backend telemetry, alerts, sensors and maneuver history.
 - [ ] Collect final screenshots and delivery evidence.

@@ -79,15 +79,18 @@ For real spacecraft-like behavior, the final architecture should also include lo
 
 ## Android Follow-Up
 
-The Android app should keep the previously agreed direction:
+The Android app is implemented under `android/OrbitShieldEngineer` with the previously agreed direction:
 
-- Kotlin
-- Jetpack Compose
-- Retrofit with Gson
-- MVVM
-- StateFlow
-- Polling every 3 to 5 seconds
-- Login screen
-- Dashboard screen
-- Maneuver history screen
-- Critical collision alert visual state
+- Kotlin.
+- Jetpack Compose.
+- Retrofit with Gson.
+- MVVM with StateFlow.
+- DataStore for JWT/session persistence.
+- Login screen with configurable API base URL.
+- Dashboard screen with 5-second polling.
+- Maneuver history screen.
+- Scenario control screen using real backend endpoints.
+- Settings/status screen derived from real session and mission data.
+- Stitch-inspired mission-control visual language.
+
+No Android screen should use mocked mission data. UI state must come from the .NET API or from values derived from API/session data.

@@ -54,13 +54,17 @@ Implemented features:
 - Swagger-triggered orbital scenario presets.
 - Onboard closest-approach autonomy flow for Wokwi.
 - Variable ESP32 avoidance angle with safe-pass return.
+- Native Android engineer panel with Retrofit, StateFlow, DataStore and Jetpack Compose.
 - Backend test plan and ER diagram documentation.
 
 ## Requirements
 
 - Docker Desktop
-- .NET SDK 8, only if running outside Docker
-- Wokwi account for the ESP32 browser simulation
+- Android Studio, only for running the native Android app/emulator
+- Wokwi account, only for the ESP32 browser simulation
+- .NET SDK 8, only if running the backend outside Docker
+
+Docker covers the backend, Oracle database and public HTTP tunnel. Android Studio is still required for the emulator because Android needs the local SDK, graphics acceleration and `adb`.
 
 ## Beginner Quick Start
 
@@ -70,7 +74,7 @@ Use this flow when running the complete demo from zero.
 
 Open Docker Desktop and wait until it says the engine is running.
 
-### 2. Open the project folder in a terminal
+### 2. Open the project folder in PowerShell
 
 Use PowerShell in the repository root:
 
@@ -78,21 +82,38 @@ Use PowerShell in the repository root:
 cd C:\Users\bi_to\Desktop\fiap-gs-orbitshield
 ```
 
-### 3. Start the backend, database and tunnel
+### 3. Start the backend, database and tunnel with one script
 
 Run:
 
 ```powershell
-docker compose up --build
+powershell -ExecutionPolicy Bypass -File .\scripts\start-demo.ps1
 ```
 
-Keep this terminal open. Docker will start:
+This script starts Docker in the background and prepares the Android project with the local Android SDK path. Docker will start:
 
 ```text
 orbitshield-oracle
 orbitshield-api
 orbitshield-tunnel
 ```
+
+It also prints the URLs you need for Swagger, Android and Wokwi.
+
+The script also prepares the demo:
+
+```text
+registers the demo engineer user if needed
+resets the orbital scenario to SAFE PASS
+```
+
+If you prefer the raw Docker command, use:
+
+```powershell
+docker compose up -d --build
+```
+
+If you use the raw Docker command, you may still need to register the demo user manually in Swagger before logging into Android.
 
 ### 4. Open Swagger
 
@@ -106,7 +127,7 @@ Swagger is the backend control panel. Use it to register/login users and throw d
 
 ### 5. Get the Wokwi public URL
 
-Open a second PowerShell terminal in the same folder and run:
+The `start-demo.ps1` script prints the public URL automatically. If you need to check it again, run:
 
 ```powershell
 docker logs orbitshield-tunnel --tail 50
@@ -201,10 +222,12 @@ The active debris scenario advances over simulated time. The backend updates the
 
 For demonstration speed, orbital scenario time is accelerated. That means a debris object can approach, trigger avoidance and then pass the satellite within a short classroom demo.
 
+Each `Throw Random Debris` click creates one debris event. The event's initial risk decision stays stable while that object is approaching, so the dashboard does not look like several different objects were launched. After the object clears the closest-approach window, the same event becomes `SAFE PASS` and the satellite returns to nominal.
+
 Expected sequence:
 
 ```text
-AVOIDANCE REQUIRED -> IMPACT PREDICTED or continued avoidance -> SAFE PASS
+AVOIDANCE REQUIRED -> SAFE PASS
 ```
 
 When the object has passed:
@@ -228,6 +251,8 @@ Use this only when you want to force the demo back to a safe state immediately.
 ### 10. Optional Swagger authentication
 
 Some endpoints require login. The IoT demo endpoints are public, but authentication is available for validation.
+
+If you started with `scripts\start-demo.ps1`, the demo user is prepared automatically. If not, register it manually:
 
 Register this user if needed:
 
@@ -270,6 +295,66 @@ If login says user already exists but login fails:
 
 - Register a different email, or use the existing known password for that email.
 - For the demo user above, use exactly `OrbitShield123!`.
+
+### 12. Run the Android App
+
+Open this folder in Android Studio:
+
+```text
+android/OrbitShieldEngineer
+```
+
+Start an Android Emulator and run the app from Android Studio.
+
+If you do not have an emulator yet:
+
+```text
+Android Studio -> Device Manager -> Create Device -> Phone -> Pixel or Medium Phone -> Download image if needed -> Finish -> Play
+```
+
+Use this API URL on the login screen:
+
+```text
+http://10.0.2.2:5184
+```
+
+Demo credentials:
+
+```text
+email: orbit.demo.2026@orbitshield.local
+password: OrbitShield123!
+```
+
+You can also build the APK from PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-android.ps1
+```
+
+If an emulator or phone is already connected, build and install with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-android.ps1 -Install
+```
+
+Android itself is not run inside Docker. Docker is used for the backend, Oracle database and public tunnel. Android Studio/emulator should stay local because it needs the Android SDK, device acceleration and a graphical emulator.
+
+### 13. Demo Flow for the Presentation
+
+Use this order when presenting:
+
+```text
+1. Start Docker with scripts\start-demo.ps1.
+2. Open Swagger at http://localhost:5184/swagger.
+3. Open Android app in the emulator and login.
+4. Confirm Dashboard starts in SAFE PASS.
+5. Open Wokwi and run the ESP32 simulation.
+6. Trigger Throw Random Debris from Swagger or Android Global screen.
+7. Watch Android show the random debris data.
+8. Watch Wokwi LCD/LED/servo react if avoidance is required.
+9. Wait for the object to pass and return to SAFE PASS.
+10. Open maneuver logs in Android or Swagger.
+```
 
 ## Environment Variables
 
@@ -323,13 +408,42 @@ Use the same address with `http://` in `iot/wokwi-orbit-shield/Config.h`, becaus
 constexpr const char* ApiBaseUrl = "http://example.loca.lt";
 ```
 
-The current Docker-generated URL during validation was:
+If the tunnel container restarts, localtunnel can generate a new URL. In that case, update `Config.h` in Wokwi and run the simulation again. A fully automatic update inside Wokwi is not possible because Wokwi stores the sketch files in the browser project, outside Docker.
+
+## Android Engineer Panel
+
+The native Android app is located at:
 
 ```text
-http://itchy-lines-hammer.loca.lt
+android/OrbitShieldEngineer
 ```
 
-If the tunnel container restarts, localtunnel can generate a new URL. In that case, update `Config.h` in Wokwi and run the simulation again. A fully automatic update inside Wokwi is not possible because Wokwi stores the sketch files in the browser project, outside Docker.
+It uses the real Mission Control API only. There is no mocked telemetry in the app.
+
+Build from terminal:
+
+```powershell
+cd android\OrbitShieldEngineer
+$env:ANDROID_HOME="$env:LOCALAPPDATA\Android\Sdk"
+$env:ANDROID_SDK_ROOT="$env:LOCALAPPDATA\Android\Sdk"
+.\gradlew.bat :app:assembleDebug
+```
+
+Use this API URL in the Android Emulator:
+
+```text
+http://10.0.2.2:5184
+```
+
+Use the current localtunnel URL on a physical device:
+
+```text
+http://example.loca.lt
+```
+
+Full Android instructions:
+
+- [Android Engineer Panel Setup](./docs/android-setup.md)
 
 ## Run Locally Without Docker
 
@@ -408,6 +522,7 @@ Full endpoint documentation:
 - [API Endpoints](./docs/api-endpoints.md)
 - [IoT Test Evidence](./docs/iot-test-plan.md)
 - [Orbital Autonomy Model](./docs/orbital-autonomy.md)
+- [Android Engineer Panel Setup](./docs/android-setup.md)
 
 ## IoT Simulation Scope
 
@@ -493,7 +608,7 @@ IMPACT RISK: late/high-risk object.
 SAFE PASS: object cleared the safety zone.
 ```
 
-The environment is time-aware. After debris is thrown, its relative position continues moving using its relative velocity. The ESP32 does not need a manual `SafePass` to recover: once the object has passed and the calculated miss distance is safe, the next polling cycle returns the satellite to nominal. `SafePass` remains available as a manual classroom reset.
+The environment is time-aware. After debris is thrown, its relative position continues moving using its relative velocity. The initial classification of that single event remains stable during approach, and once the object has passed the closest-approach window the backend reports `SAFE PASS`. The ESP32 does not need a manual `SafePass` to recover: the next polling cycle returns the satellite to nominal. `SafePass` remains available as a manual classroom reset.
 
 The orbital environment includes debris attributes:
 
@@ -625,5 +740,5 @@ Copy `accessToken`, click `Authorize` in Swagger and paste only the token value.
 
 1. Open the Wokwi ESP32 simulation in [iot/wokwi-orbit-shield](./iot/wokwi-orbit-shield).
 2. Expose the backend with a public HTTP tunnel and update `Config.h`.
-3. Build the Android Kotlin app with MVVM and Jetpack Compose.
+3. Open the Android Kotlin app in [android/OrbitShieldEngineer](./android/OrbitShieldEngineer).
 4. Collect final screenshots, logs and test evidence for submission.

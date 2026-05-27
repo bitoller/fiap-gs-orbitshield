@@ -9,6 +9,10 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
     private const string CelesTrakTleUrl = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE";
     private const decimal SimulationTimeScale = 12m;
     private static readonly HttpClient HttpClient = new();
+    private static CelesTrakTle cachedTle = new(
+        "ISS (ZARYA)",
+        "1 25544U 98067A   26147.16367648  .00012541  00000+0  23194-3 0  9995",
+        "2 25544  51.6335  44.1780 0007390 102.4616 257.7200 15.49411560568499");
     private static ActiveOrbitalScenario? activeScenario;
 
     public IReadOnlyCollection<OrbitalScenarioPresetResponse> ListPresets(int satelliteId) =>
@@ -33,7 +37,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
 
         var approachSeconds = Clamp(request.ApproachTimeSeconds, 20, 300);
         var safeDistanceKm = Clamp(request.SafeDistanceKm, 1, 25);
-        var missDistanceKm = Clamp(request.MissDistanceKm, 0, safeDistanceKm * 2);
+        var missDistanceKm = Clamp(request.MissDistanceKm, 0, safeDistanceKm * 4);
         var debrisDiameterMeters = request.DiameterMeters.HasValue
             ? Clamp(request.DiameterMeters.Value, 0.01m, 20)
             : DiameterFromCrossSection(request.EffectiveCrossSectionM2);
@@ -71,7 +75,9 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             debrisDiameterMeters,
             estimatedMassKg,
             request.DebrisDensityPerKm3,
-            request.EffectiveCrossSectionM2);
+            request.EffectiveCrossSectionM2,
+            approachSeconds,
+            scenarioClassification);
 
         return BuildResponse(activeScenario, now);
     }
@@ -91,8 +97,10 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             scenario.EffectiveCrossSectionM2);
 
         var impactEnergyJoules = 0.5m * scenario.EstimatedMassKg * (analysis.RelativeSpeedKmS * 1000m) * (analysis.RelativeSpeedKmS * 1000m);
-        var predictedImpact = analysis.MissDistanceKm <= 0.05m || (analysis.TimeToClosestApproachSeconds <= 30m && analysis.MissDistanceKm <= scenario.SafeDistanceKm);
-        var scenarioClassification = ClassifyScenario(analysis.TimeToClosestApproachSeconds, analysis.MissDistanceKm, scenario.SafeDistanceKm, predictedImpact);
+        var objectCleared = elapsedSeconds > scenario.ApproachSeconds + 10m;
+        var predictedImpact = !objectCleared && (analysis.MissDistanceKm <= 0.05m || (analysis.TimeToClosestApproachSeconds <= 30m && analysis.MissDistanceKm <= scenario.SafeDistanceKm));
+        var scenarioClassification = objectCleared ? "SAFE PASS" : scenario.InitialClassification;
+        var recommendedEmergency = !objectCleared && (analysis.MissDistanceKm <= scenario.SafeDistanceKm || analysis.CollisionProbability >= 50);
 
         return new OrbitalEnvironmentResponse(
             scenario.SatelliteId,
@@ -118,7 +126,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             scenarioClassification,
             analysis.CollisionProbability,
             "P = 1 - exp(-(relativeSpeedKmS * effectiveCrossSectionKm2 * debrisDensityPerKm3 * lookaheadSeconds))",
-            analysis.MissDistanceKm <= scenario.SafeDistanceKm || analysis.CollisionProbability >= 50,
+            recommendedEmergency,
             predictedImpact);
     }
 
@@ -158,13 +166,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             return BuildResponse(activeScenario, DateTime.UtcNow);
         }
 
-        return await SpawnDebrisAsync(new SpawnDebrisRequest(
-            satelliteId,
-            ApproachTimeSeconds: 90,
-            MissDistanceKm: 0.8m,
-            SafeDistanceKm: 5,
-            DebrisDensityPerKm3: 0.000000015m,
-            EffectiveCrossSectionM2: 4000000m), cancellationToken);
+        return await SpawnPresetAsync(satelliteId, OrbitalScenarioPreset.SafePass, cancellationToken);
     }
 
     private static OrbitalAnalysis Analyze(
@@ -196,23 +198,35 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
 
     private static async Task<CelesTrakTle> FetchIssTleAsync(CancellationToken cancellationToken)
     {
-        using var response = await HttpClient.GetAsync(CelesTrakTleUrl, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var line1Index = content.IndexOf("1 ", StringComparison.Ordinal);
-        var line2Index = content.IndexOf("2 ", StringComparison.Ordinal);
-
-        if (line1Index < 0 || line2Index < 0)
+        try
         {
-            throw new InvalidOperationException("CelesTrak TLE response is invalid.");
+            using var response = await HttpClient.GetAsync(CelesTrakTleUrl, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
+            var line1Index = content.IndexOf("1 ", StringComparison.Ordinal);
+            var line2Index = content.IndexOf("2 ", StringComparison.Ordinal);
+
+            if (line1Index < 0 || line2Index < 0)
+            {
+                return cachedTle;
+            }
+
+            var name = content[..line1Index].Trim();
+            var line1 = content[line1Index..line2Index].Trim();
+            var line2 = content[line2Index..].Trim();
+
+            cachedTle = new CelesTrakTle(string.IsNullOrWhiteSpace(name) ? "ISS (ZARYA)" : name, line1, line2);
+            return cachedTle;
         }
-
-        var name = content[..line1Index].Trim();
-        var line1 = content[line1Index..line2Index].Trim();
-        var line2 = content[line2Index..].Trim();
-
-        return new CelesTrakTle(string.IsNullOrWhiteSpace(name) ? "ISS (ZARYA)" : name, line1, line2);
+        catch (HttpRequestException)
+        {
+            return cachedTle;
+        }
+        catch (TaskCanceledException)
+        {
+            return cachedTle;
+        }
     }
 
     private static OrbitalVectorResponse ToResponse(SGPdotNET.Util.Vector3 vector) =>
@@ -230,7 +244,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             OrbitalScenarioPreset.SafePass => new SpawnDebrisRequest(
                 satelliteId,
                 ApproachTimeSeconds: 120,
-                MissDistanceKm: 12,
+                MissDistanceKm: 16,
                 SafeDistanceKm: 5,
                 DebrisDensityPerKm3: 0.000000005m,
                 EffectiveCrossSectionM2: 0.01m,
@@ -349,7 +363,9 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
         decimal DebrisDiameterMeters,
         decimal EstimatedMassKg,
         decimal DebrisDensityPerKm3,
-        decimal EffectiveCrossSectionM2);
+        decimal EffectiveCrossSectionM2,
+        decimal ApproachSeconds,
+        string InitialClassification);
 
     private readonly record struct OrbitalVector(decimal X, decimal Y, decimal Z)
     {
