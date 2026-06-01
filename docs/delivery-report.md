@@ -109,6 +109,8 @@ Exemplos de evidência:
 
 Esses logs mostram que sensores enviam dados, o backend responde, o ESP32 calcula risco autonomamente e a manobra é persistida.
 
+Observação importante: lançar debris aleatório cria um cenário orbital, mas não cria log de manobra sozinho. O log só é persistido quando o Wokwi está rodando, o ESP32 detecta aproximação insegura, movimenta o servo e envia `POST /api/satellite/maneuver`. O app Android apenas consulta o histórico persistido e atualiza a tela a cada 5 segundos.
+
 ## 4. Mobile Android
 
 ### Entregáveis

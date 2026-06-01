@@ -216,6 +216,8 @@ IMPACT PREDICTED
 
 If the event requires avoidance, the red LED turns on, the servo moves, and the backend receives a maneuver log.
 
+Important: throwing debris does not create a maneuver log by itself. A maneuver log is created only when the Wokwi ESP32 simulation is running, detects an unsafe closest approach, moves the servo and posts `POST /api/satellite/maneuver` back to the backend. If Wokwi is stopped, using an old tunnel URL, or the generated debris is only `SAFE PASS` / `NEAR MISS`, the Android Maneuver Logs screen will not receive a new entry.
+
 ### 8. Watch the satellite return by itself
 
 The active debris scenario advances over simulated time. The backend updates the relative position on every `GET /environment`, and the ESP32 recalculates the closest approach every polling cycle.
@@ -352,8 +354,9 @@ Use this order when presenting:
 6. Trigger Throw Random Debris from Swagger or Android Global screen.
 7. Watch Android show the random debris data.
 8. Watch Wokwi LCD/LED/servo react if avoidance is required.
-9. Wait for the object to pass and return to SAFE PASS.
-10. Open maneuver logs in Android or Swagger.
+9. Confirm Wokwi Serial Monitor shows `POST /api/satellite/maneuver -> 200`.
+10. Wait up to 5 seconds for Android Maneuver Logs to refresh.
+11. Wait for the object to pass and return to SAFE PASS.
 ```
 
 ## Environment Variables
@@ -444,6 +447,8 @@ http://example.loca.lt
 Full Android instructions:
 
 - [Android Engineer Panel Setup](./docs/android-setup.md)
+
+Maneuver history refreshes every 5 seconds. New entries appear only after the ESP32 posts a maneuver to the backend. The Android app does not create maneuver logs when the engineer throws debris; it only displays logs persisted by Mission Control.
 
 ## Run Locally Without Docker
 

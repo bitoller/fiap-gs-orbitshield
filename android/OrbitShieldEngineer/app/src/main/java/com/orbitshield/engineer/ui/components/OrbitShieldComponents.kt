@@ -102,6 +102,28 @@ fun KeyValue(label: String, value: String, accent: Color = MaterialTheme.colorSc
 }
 
 @Composable
+fun KeyValueBlock(label: String, value: String, accent: Color = MaterialTheme.colorScheme.onSurface) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Text(
+            text = label.uppercase(),
+            color = TextMuted,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace
+        )
+        Text(
+            text = value,
+            color = accent,
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
 fun RiskBanner(label: String, riskLevel: RiskLevel) {
     val color = when (riskLevel) {
         RiskLevel.Nominal -> CyberCyan

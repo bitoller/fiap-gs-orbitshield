@@ -37,7 +37,7 @@ SOFT = colors.HexColor("#F3F7FA")
 
 
 def load_integrantes() -> str:
-    text = (ROOT / "entrega.txt").read_text(encoding="utf-8").strip()
+    text = (ROOT / "docs" / "entrega.txt").read_text(encoding="utf-8").strip()
     lines = [line.strip() for line in text.splitlines() if line.strip() and not line.lower().startswith("vídeo")]
     return "<br/>".join(lines)
 

@@ -48,6 +48,7 @@ import com.orbitshield.engineer.domain.model.riskLevel
 import com.orbitshield.engineer.presentation.AuthUiState
 import com.orbitshield.engineer.presentation.MissionUiState
 import com.orbitshield.engineer.ui.components.KeyValue
+import com.orbitshield.engineer.ui.components.KeyValueBlock
 import com.orbitshield.engineer.ui.components.OrbitProgress
 import com.orbitshield.engineer.ui.components.RiskBanner
 import com.orbitshield.engineer.ui.components.TechnicalPanel
@@ -249,7 +250,7 @@ fun ManeuverHistoryScreen(state: MissionUiState) {
 @Composable
 private fun ManeuverCard(maneuver: ManeuverLog) {
     TechnicalPanel(title = "Maneuver ${maneuver.id}") {
-        KeyValue("Action", maneuver.action)
+        KeyValueBlock("Action", maneuver.action)
         KeyValue("Servo Angle", "${maneuver.servoAngle} deg", CyberCyan)
         KeyValue("Thrust", maneuver.thrustLevel?.format("%") ?: "--")
         KeyValue("Source", maneuver.source)

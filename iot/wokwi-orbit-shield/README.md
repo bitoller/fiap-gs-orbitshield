@@ -99,6 +99,14 @@ POST /api/orbital-scenarios/satellites/1/throw-random-debris
 
 This behaves like a Swagger button: it throws a randomized object using default size and safety limits.
 
+Important: this button only creates a debris scenario in Mission Control. A maneuver log is created later, only if this Wokwi simulation is running and the ESP32 decides that the object requires avoidance. The confirmation is the Serial Monitor line showing a successful maneuver post:
+
+```text
+POST /api/satellite/maneuver -> 200
+```
+
+The Android Maneuver Logs screen polls the backend every 5 seconds. If this line does not appear in Wokwi, Android will not show a new maneuver log.
+
 The actuator angle is calculated onboard:
 
 ```text

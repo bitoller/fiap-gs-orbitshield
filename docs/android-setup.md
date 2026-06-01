@@ -231,6 +231,16 @@ GET /api/satellite/maneuvers?satelliteId=1
 
 Shows ESP32 maneuver logs persisted by the backend.
 
+The screen refreshes through the same mission polling loop used by the Dashboard, every 5 seconds.
+
+Important behavior:
+
+- `Throw Random Debris` creates a debris scenario.
+- It does not create a maneuver log automatically.
+- A new log appears only if Wokwi is running, the ESP32 detects an unsafe approach, moves the servo and posts `POST /api/satellite/maneuver`.
+- If Wokwi is stopped, using an outdated tunnel URL, or the event is `SAFE PASS` / `NEAR MISS`, no new maneuver entry is expected.
+- To force a clear maneuver during a demo, run Wokwi and trigger `CriticalImpact` from the Global screen or Swagger.
+
 ### Global / Scenario Control
 
 Real endpoints:
@@ -290,4 +300,5 @@ Design principles:
 10. Open Global and tap `Throw Random Debris`.
 11. Confirm Dashboard updates risk state on the next polling cycle.
 12. Run Wokwi at the same time and confirm the ESP32 reacts.
-13. Open Logs and confirm ESP32 maneuvers appear after avoidance events.
+13. Confirm the Wokwi Serial Monitor shows `POST /api/satellite/maneuver -> 200`.
+14. Open Logs and wait up to 5 seconds for the new ESP32 maneuver to appear.
