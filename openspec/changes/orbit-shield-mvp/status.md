@@ -26,24 +26,14 @@ POST status: 200
 
 ## Current Tunnel
 
-```text
-http://tender-socks-fall.loca.lt
+The current Wokwi/physical-phone tunnel URL is printed by:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-demo.ps1
 ```
 
-This URL may change if localtunnel is restarted.
+The URL may change if localtunnel is restarted.
 
 ## Next Work
 
-Do not start Android until the user asks. When resumed, implement the native Android app with:
-
-- Kotlin
-- Jetpack Compose
-- Retrofit
-- Gson converter
-- MVVM
-- StateFlow
-- Polling every 3 to 5 seconds
-- Login screen
-- Dashboard screen
-- Maneuver history screen
-- Critical collision alert UI
+Android implementation is complete. Remaining delivery work is final evidence collection and video pitch.

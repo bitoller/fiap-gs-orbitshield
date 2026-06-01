@@ -524,6 +524,26 @@ Full endpoint documentation:
 - [Orbital Autonomy Model](./docs/orbital-autonomy.md)
 - [Android Engineer Panel Setup](./docs/android-setup.md)
 
+## Final Delivery Documents
+
+The non-source-code delivery report requested by the assignment is available in:
+
+- [Final PDF Report](./docs/orbit-shield-final-report.pdf)
+- [Editable Markdown Report](./docs/delivery-report.md)
+- [Group Members & Pitch Video Link](./docs/entrega.txt)
+
+The PDF includes the group members, database model, API summary, test evidence, mobile app summary, security practices and IoT logic.
+
+Logs are treated as execution evidence:
+
+```powershell
+docker logs orbitshield-api --tail 80
+docker logs orbitshield-tunnel --tail 50
+powershell -ExecutionPolicy Bypass -File .\scripts\build-android.ps1
+```
+
+Wokwi logs are collected from the Serial Monitor while the ESP32 simulation is running.
+
 ## IoT Simulation Scope
 
 The Wokwi ESP32 will simulate the satellite hardware layer:

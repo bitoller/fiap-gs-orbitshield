@@ -1,9 +1,13 @@
 using OrbitShield.Application.Repositories;
+using OrbitShield.Application.Abstractions;
 using SGPdotNET.Observation;
+using OrbitShield.Domain;
 
 namespace OrbitShield.Application.Orbital;
 
-public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IOrbitalScenarioService
+public sealed class OrbitalScenarioService(
+    ISatelliteRepository satellites,
+    IUnitOfWork unitOfWork) : IOrbitalScenarioService
 {
     private const int IssCatalogNumber = 25544;
     private const string CelesTrakTleUrl = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE";
@@ -60,6 +64,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
         var impactEnergyJoules = 0.5m * estimatedMassKg * (analysis.RelativeSpeedKmS * 1000m) * (analysis.RelativeSpeedKmS * 1000m);
         var predictedImpact = analysis.MissDistanceKm <= 0.05m || (analysis.TimeToClosestApproachSeconds <= 30m && analysis.MissDistanceKm <= safeDistanceKm);
         var scenarioClassification = ClassifyScenario(analysis.TimeToClosestApproachSeconds, analysis.MissDistanceKm, safeDistanceKm, predictedImpact);
+        satellite.OrbitStatus = ToOrbitStatus(scenarioClassification, predictedImpact);
 
         activeScenario = new ActiveOrbitalScenario(
             satellite.Id,
@@ -79,6 +84,7 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
             approachSeconds,
             scenarioClassification);
 
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return BuildResponse(activeScenario, now);
     }
 
@@ -346,6 +352,13 @@ public sealed class OrbitalScenarioService(ISatelliteRepository satellites) : IO
 
         return timeToClosestApproachSeconds <= 30m ? "LATE DETECTION" : "AVOIDANCE REQUIRED";
     }
+
+    private static string ToOrbitStatus(string scenarioClassification, bool predictedImpact) =>
+        predictedImpact || scenarioClassification is "IMPACT PREDICTED" or "LATE DETECTION"
+            ? OrbitStatuses.Emergency
+            : scenarioClassification is "AVOIDANCE REQUIRED" or "NEAR MISS"
+                ? OrbitStatuses.Warning
+                : OrbitStatuses.Nominal;
 
     private sealed record CelesTrakTle(string Name, string Line1, string Line2);
     private sealed record OrbitalAnalysis(decimal TimeToClosestApproachSeconds, decimal MissDistanceKm, decimal RelativeSpeedKmS, decimal CollisionProbability);

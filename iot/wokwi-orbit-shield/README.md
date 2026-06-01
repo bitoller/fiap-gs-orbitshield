@@ -135,7 +135,7 @@ cd C:\Users\bi_to\Desktop\fiap-gs-orbitshield
 Run:
 
 ```powershell
-docker compose up --build
+powershell -ExecutionPolicy Bypass -File .\scripts\start-demo.ps1
 ```
 
 This starts:
@@ -146,7 +146,7 @@ orbitshield-api
 orbitshield-tunnel
 ```
 
-Leave this terminal open.
+The script prints the current public tunnel URL and resets the mission to `SAFE PASS`.
 
 ### 3. Get the public tunnel URL
 
@@ -167,8 +167,8 @@ Use the same host with `http://` in Wokwi.
 Example:
 
 ```text
-Docker log: https://itchy-lines-hammer.loca.lt
-Wokwi Config.h: http://itchy-lines-hammer.loca.lt
+Docker log: https://example.loca.lt
+Wokwi Config.h: http://example.loca.lt
 ```
 
 ### 4. Update `Config.h`
@@ -177,12 +177,6 @@ In Wokwi, open `Config.h` and update this line:
 
 ```cpp
 constexpr const char* ApiBaseUrl = "http://example.loca.lt";
-```
-
-Current Docker tunnel used during validation:
-
-```cpp
-constexpr const char* ApiBaseUrl = "http://itchy-lines-hammer.loca.lt";
 ```
 
 If the tunnel container restarts, the URL may change. Update `Config.h` in the Wokwi project again.

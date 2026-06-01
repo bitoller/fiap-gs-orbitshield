@@ -7,7 +7,7 @@ Validate the simulated ESP32 satellite in Wokwi communicating with the .NET Miss
 ## Environment
 
 - Backend: Docker Compose
-- API URL exposed to Wokwi: `http://tender-socks-fall.loca.lt`
+- API URL exposed to Wokwi: current localtunnel URL printed by `scripts/start-demo.ps1`
 - Simulator: Wokwi ESP32 Arduino
 - Circuit: ESP32, servo motor, LCD I2C, DHT22 and potentiometer
 

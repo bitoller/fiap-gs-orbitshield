@@ -20,8 +20,12 @@ if ($SkipBuild) {
 Write-Host "Waiting for tunnel URL..."
 $publicUrl = $null
 for ($i = 0; $i -lt 30; $i++) {
-    $logs = docker logs orbitshield-tunnel --tail 80 2>$null
-    $match = $logs | Select-String -Pattern "https://[a-zA-Z0-9\-]+\.loca\.lt" | Select-Object -Last 1
+    $logs = try {
+        docker logs orbitshield-tunnel --tail 120 2>&1
+    } catch {
+        $_.Exception.Message
+    }
+    $match = $logs | Select-String -Pattern "https://[a-zA-Z0-9\-]+\.loca\.lt" -AllMatches | Select-Object -Last 1
     if ($match) {
         $publicUrl = $match.Matches[0].Value
         break
